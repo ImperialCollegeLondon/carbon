@@ -1,0 +1,40 @@
+name: Test and build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ${{matrix.os}}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version: ['3.13']
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install poetry
+        run: pipx install poetry
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{matrix.python-version}}
+          cache: poetry
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run mypy
+        run: poetry run mypy .
+
+      - name: Run tests
+        run: poetry run pytest
+
+      - name: Check that documentation builds cleanly with MkDocs
+        if: matrix.os == 'ubuntu-latest'
+        run: poetry run mkdocs build --strict

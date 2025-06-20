@@ -1,0 +1,67 @@
+[project]
+name = "carbon"
+version = "0.1.0"
+description = "Calculate carbon emissions"
+authors = [
+    {name = "Jack Coker", email = "j.coker20@imperial.ac.uk"},
+    {name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk"},
+]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.16.0"
+pytest = "^8.4.0"
+pytest-cov = "^6.2.1"
+pytest-mock = "^3.14.1"
+pre-commit = "^4.2.0"
+ruff = "^0.11.13"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.6.1"
+mkdocstrings = "^0.29.1"
+mkdocstrings-python = "^1.16.12"
+mkdocs-material = "^9.6.14"
+mkdocs-gen-files = "^0.5.0"
+mkdocs-literate-nav = "^0.6.2"
+mkdocs-section-index = "^0.3.10"
+
+[tool.mypy]
+disallow_any_explicit = true
+disallow_any_generics = true
+warn_unreachable = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+exclude = [".venv/", "docs/"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+addopts = "-v -p no:warnings --cov=carbon --cov-branch --cov-report=html --cov-report=xml --doctest-modules --ignore=carbon/__main__.py --ignore=docs/"
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "D",   # pydocstyle
+    "E",   # pycodestyle
+    "F",   # Pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "RUF", # ruff
+]
+pydocstyle.convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "D100", # Missing docstring in public module
+    "D104", # Missing docstring in public package
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
