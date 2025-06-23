@@ -1,12 +1,24 @@
 # carbon
 
-Calculate carbon emissions
+Calculates carbon emissions of compute jobs run on the Imperial College London HPC clusters.
+
+How it works: ToDo
 
 This is a Python application that uses [poetry](https://python-poetry.org) for packaging
 and dependency management. It also provides [pre-commit](https://pre-commit.com/) hooks
 (for [ruff](https://pypi.org/project/ruff/) and
 [mypy](https://mypy.readthedocs.io/en/stable/)) and automated tests using
 [pytest](https://pytest.org/) and [GitHub Actions](https://github.com/features/actions).
+
+## For users
+
+Installation: ToDo.
+
+Running:
+
+```bash
+carbon <job ID>
+```
 
 ## For developers
 
@@ -29,7 +41,7 @@ To get started:
 1. Activate the virtual environment (alternatively, ensure any Python-related command is preceded by `poetry run`):
 
    ```bash
-   poetry shell
+   eval $(poetry env activate)
    ```
 
 1. Install the git hooks:
@@ -41,5 +53,5 @@ To get started:
 1. Run the main app:
 
    ```bash
-   python -m carbon
+   python -m carbon <job ID>
    ```
