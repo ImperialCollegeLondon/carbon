@@ -42,4 +42,4 @@ if __name__ == "__main__":
         f"Energy consumed for {walltime} hours on {ncores} cores "
         f"is {energy_consumed} kWh"
     )
-    print(f"Estimated emissions is {emissions} gCO2")
+    print(f"Estimated emissions is {round(emissions)} gCO2")
