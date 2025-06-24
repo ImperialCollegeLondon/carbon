@@ -9,6 +9,7 @@ authors = [
 
 [tool.poetry.dependencies]
 python = "^3.13"
+types-requests = "^2.32.4.20250611"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.16.0"
