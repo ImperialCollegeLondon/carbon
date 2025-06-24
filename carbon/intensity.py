@@ -5,7 +5,7 @@ Data is fetched from the Carbon Intensity API (carbonintensity.org.uk) based on 
 specified region and time period.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import requests
 
@@ -13,18 +13,33 @@ import requests
 class CarbonIntensity:
     """A class to represent carbon intensity data."""
 
-    def __init__(self) -> None:
-        """Initialize the CarbonIntensity object."""
-        self.yesterday = (datetime.now() - timedelta(days=1)).strftime(
-            "%Y-%m-%dT%H:%MZ"
-        )
+    def __init__(self, time: datetime) -> None:
+        """Initialize the CarbonIntensity object.
 
-    def get_yesterday(self) -> int:
-        """Fetch carbon intensity data for yesterday."""
+        Args:
+            time: The time for which to fetch carbon intensity data.
+        """
+        self._time = time.strftime("%Y-%m-%dT%H:%MZ")
+
+    def fetch(self) -> float:
+        """Fetch carbon intensity data."""
         headers = {"Accept": "application/json"}
         response = requests.get(
-            f"https://api.carbonintensity.org.uk/intensity/{self.yesterday}",
+            f"https://api.carbonintensity.org.uk/intensity/{self._time}",
             params={},
             headers=headers,
         )
-        return response.json()["data"][0]["intensity"]["actual"]
+
+        if response.status_code != 200:
+            raise ValueError(
+                f"Failed to fetch carbon intensity data: "
+                f"{response.status_code} {response.text}"
+            )
+
+        intensity = response.json()["data"][0]["intensity"]["actual"]
+        if intensity is None:
+            # ToDo: add a info message to indicate we are using forecasted data.
+            # Maybe implement a logger?
+            intensity = response.json()["data"][0]["intensity"]["forecast"]
+
+        return float(intensity)
