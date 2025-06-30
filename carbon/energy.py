@@ -9,20 +9,18 @@ class Energy:
 
     CPUPOWER = 12.0  # Watts per core.
 
-    def __init__(self, ncores: int, walltime: float) -> None:
+    def __init__(self, cpuhours: float) -> None:
         """Initialize the Energy object.
 
         Args:
-            ncores: The number of CPU cores.
-            walltime: The length of time the compute job ran for in hours.
+            cpuhours: The CPU hours consumed by the job.
         """
-        self._ncores = ncores
-        self._walltime = walltime
+        self._cpuhours = cpuhours
 
     def calculate(self) -> float:
-        """Calculate energy consumption in watt-hours.
+        """Calculate energy consumption in kilowatt-hours.
 
         Returns:
             The energy consumed in kilowatt-hours.
         """
-        return (self.CPUPOWER * self._ncores * self._walltime) / 1000.0
+        return (self.CPUPOWER * self._cpuhours) / 1000.0
