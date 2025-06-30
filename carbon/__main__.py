@@ -29,6 +29,7 @@ if __name__ == "__main__":
 
     print(f"Carbon intensity for {job._starttime} is {intensity} gCO2/kWh")
     print(
-        f"Energy consumed for {job._cputime:.2f} CPU-hours is {energy_consumed:.2f} kWh"
+        f"Energy consumed from {job._cputime:.2f} CPU-hours "
+        f"is {energy_consumed:.2f} kWh"
     )
     print(f"Estimated emissions is {round(emissions)} gCO2")
