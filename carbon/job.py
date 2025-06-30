@@ -5,6 +5,7 @@ This module provides functionality for processing and representing a compute job
 
 import json
 import subprocess
+from datetime import datetime
 
 
 class Job:
@@ -12,10 +13,11 @@ class Job:
 
     def __init__(self, id: str):
         """Initialise a Job object from an ID."""
-        # cmd = f"qstat -xfF json {id}"
+        cmd = f"qstat -xfF json {id}"
+
         try:
             output = subprocess.run(
-                ["qstat", "-xfF", "json", id],
+                cmd,
                 shell=True,
                 check=True,
                 timeout=10,
@@ -33,14 +35,40 @@ class Job:
             if not job_data:
                 raise ValueError(f"No job data found for ID {id}")
 
-            print(job_data)
+            # Get the job ID as recorded by the job scheduler.
+            # Here we assume only one job was captured by qstat.
+            # If multiple jobs are returned, this will only return the first one.
+            internal_id = next(iter(job_data["Jobs"]))
 
-            # self._id = None
-            # self._status = None
-            # self._starttime = None
-            # self._runtime = None
-            # self._cpuusage = None # Average CPU usage
-            # self._cputime = None # Total CPU time in seconds
-            # self._ncores = None # Number of CPU cores used
-            # self._memory = None
-            # self._vmemory = None
+            self._id = internal_id
+            self._status = job_data["Jobs"][internal_id]["job_state"]
+            self._starttime = datetime.strptime(
+                job_data["Jobs"][internal_id]["stime"], "%a %b %d %H:%M:%S %Y"
+            )
+
+            resources = job_data["Jobs"][internal_id]["resources_used"]
+            h, m, s = resources["walltime"].split(":")
+            self._runtime = float(h) + float(m) / 60.0 + float(s) / 3600.0
+            self._cpuusage = float(resources["cpupercent"]) / 100.0  # Average CPU usage
+            self._cputime = resources["cput"]  # HH:MM:SS format
+            self._ncores = int(resources["ncpus"])  # Number of CPU cores used
+
+            # Memory usage in kilobytes
+            mem = resources["mem"]
+            if mem.endswith("kb"):
+                self._memory = int(mem[:-2])
+            else:
+                raise NotImplementedError(
+                    f"Memory format '{mem}' not implemented. "
+                    "Expected format is 'Xkb' where X is an integer."
+                )
+
+            # Virtual memory usage in kilobytes
+            vmem = resources["vmem"]
+            if vmem.endswith("kb"):
+                self._vmemory = int(vmem[:-2])
+            else:
+                raise NotImplementedError(
+                    f"Virtual memory format '{vmem}' not implemented. "
+                    "Expected format is 'Xkb' where X is an integer."
+                )
