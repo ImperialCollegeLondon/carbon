@@ -8,6 +8,12 @@ import subprocess
 from datetime import datetime
 
 
+def hours(time: str) -> float:
+    """Convert a time string in HH:MM:SS format to hours."""
+    h, m, s = time.split(":")
+    return float(h) + float(m) / 60.0 + float(s) / 3600.0
+
+
 class Job:
     """A class to represent a compute job."""
 
@@ -47,10 +53,9 @@ class Job:
             )
 
             resources = job_data["Jobs"][internal_id]["resources_used"]
-            h, m, s = resources["walltime"].split(":")
-            self._runtime = float(h) + float(m) / 60.0 + float(s) / 3600.0
+            self._runtime = hours(resources["walltime"])
             self._cpuusage = float(resources["cpupercent"]) / 100.0  # Average CPU usage
-            self._cputime = resources["cput"]  # HH:MM:SS format
+            self._cputime = hours(resources["cput"])
             self._ncores = int(resources["ncpus"])  # Number of CPU cores used
 
             # Memory usage in kilobytes
