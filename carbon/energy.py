@@ -9,12 +9,12 @@ class Energy:
 
     CPUPOWER = 12.0  # Watts per core.
     MEMPOWER = 0.3725  # Watts per GB of allocated RAM. From DOI:10.1002/advs.202100707
-    PUE = 1.5  # Power Usage Effectiveness.
+    PUE = 1.56  # Power Usage Effectiveness. Value is average PUE of all data centers
+    # surveyed in the Uptime Institute Global Data Center Survey 2024. ToDo: Get the
+    # PUE of the data centers used by Imperial College London.
 
     # ToDo: vary CPUPOWER based on CPU type
     # (Can get 'TDP' from manufacturer. Then look up which nodes have which CPU types)
-    # ToDo: find out value of PUE data centers used by Imperial. May need to
-    # vary based on cluster.
 
     def __init__(self, cpuhours: float, runtime: float, mem: float) -> None:
         """Initialize the Energy object.
