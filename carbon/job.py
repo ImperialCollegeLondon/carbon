@@ -59,6 +59,9 @@ class Job:
             self._ncores = int(resources["ncpus"])  # Number of CPU cores used
 
             # Memory usage in kilobytes
+            # ToDO: Get allocated/requested memory instead of memory used.
+            # Allocated/requested memory is more relevant for energy consumption.
+            # From DOI:10.1002/advs.202100707
             mem = resources["mem"]
             if mem.endswith("kb"):
                 self._memory = int(mem[:-2])
