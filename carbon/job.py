@@ -46,37 +46,28 @@ class Job:
             # If multiple jobs are returned, this will only return the first one.
             internal_id = next(iter(job_data["Jobs"]))
 
+            resources_used = job_data["Jobs"][internal_id]["resources_used"]
+            resources_allocated = job_data["Jobs"][internal_id]["Resource_List"]
+
             self._id = internal_id
             self._status = job_data["Jobs"][internal_id]["job_state"]
             self._starttime = datetime.strptime(
                 job_data["Jobs"][internal_id]["stime"], "%a %b %d %H:%M:%S %Y"
             )
 
-            resources = job_data["Jobs"][internal_id]["resources_used"]
-            self._runtime = hours(resources["walltime"])
-            self._cpuusage = float(resources["cpupercent"]) / 100.0  # Average CPU usage
-            self._cputime = hours(resources["cput"])
-            self._ncores = int(resources["ncpus"])  # Number of CPU cores used
+            self._runtime = hours(resources_used["walltime"])
+            self._cpuusage = float(resources_used["cpupercent"]) / 100.0
+            self._cputime = hours(resources_used["cput"])
+            self._ncores = int(resources_used["ncpus"])
 
-            # Memory usage in kilobytes
-            # ToDO: Get allocated/requested memory instead of memory used.
-            # Allocated/requested memory is more relevant for energy consumption.
+            # Allocated memory in kilobytes
+            # Allocated memory is more relevant for energy consumption.
             # From DOI:10.1002/advs.202100707
-            mem = resources["mem"]
+            mem = resources_allocated["mem"]
             if mem.endswith("kb"):
                 self._memory = int(mem[:-2])
             else:
                 raise NotImplementedError(
                     f"Memory format '{mem}' not implemented. "
-                    "Expected format is 'Xkb' where X is an integer."
-                )
-
-            # Virtual memory usage in kilobytes
-            vmem = resources["vmem"]
-            if vmem.endswith("kb"):
-                self._vmemory = int(vmem[:-2])
-            else:
-                raise NotImplementedError(
-                    f"Virtual memory format '{vmem}' not implemented. "
                     "Expected format is 'Xkb' where X is an integer."
                 )
