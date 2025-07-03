@@ -64,10 +64,10 @@ class Job:
             # Allocated memory is more relevant for energy consumption.
             # From DOI:10.1002/advs.202100707
             mem = resources_allocated["mem"]
-            if mem.endswith("kb"):
+            if mem.endswith("gb"):
                 self._memory = int(mem[:-2])
             else:
                 raise NotImplementedError(
                     f"Memory format '{mem}' not implemented. "
-                    "Expected format is 'Xkb' where X is an integer."
+                    "Expected format is 'Xgb' where X is an integer."
                 )
