@@ -5,7 +5,7 @@ Data is fetched from the Carbon Intensity API (carbonintensity.org.uk) based on 
 specified region and time period.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 
@@ -13,19 +13,22 @@ import requests
 class CarbonIntensity:
     """A class to represent carbon intensity data."""
 
+    REGIONID = 13  # London region ID for carbon intensity API
+
     def __init__(self, time: datetime) -> None:
         """Initialize the CarbonIntensity object.
 
         Args:
             time: The time for which to fetch carbon intensity data.
         """
-        self._time = time.strftime("%Y-%m-%dT%H:%MZ")
+        self._stime = time.strftime("%Y-%m-%dT%H:%MZ")
+        self._stime_plus = (time + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%MZ")
 
     def fetch(self) -> float:
         """Fetch carbon intensity data."""
         headers = {"Accept": "application/json"}
         response = requests.get(
-            f"https://api.carbonintensity.org.uk/intensity/{self._time}",
+            f"https://api.carbonintensity.org.uk/regional/intensity/{self._stime}/{self._stime_plus}/regionid/{self.REGIONID}",
             params={},
             headers=headers,
         )
@@ -36,10 +39,10 @@ class CarbonIntensity:
                 f"{response.status_code} {response.text}"
             )
 
-        intensity = response.json()["data"][0]["intensity"]["actual"]
-        if intensity is None:
-            # ToDo: add a info message to indicate we are using forecasted data.
-            # Maybe implement a logger?
-            intensity = response.json()["data"][0]["intensity"]["forecast"]
+        # We ask for a 30 minute time period, so
+        # should only be one item in the data list
+        # which we select with `next(iter(...)).
+        # Can only get forecasted data for regions
+        intensity = next(iter(response.json()["data"]["data"]))["intensity"]["forecast"]
 
         return float(intensity)
