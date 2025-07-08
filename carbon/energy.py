@@ -7,7 +7,8 @@ This module provides functionality to calculate energy consumption.
 class Energy:
     """A class to represent energy consumption."""
 
-    CPUPOWER = 12.0  # Watts per core.
+    CPUPOWER = 12.0  # Watts per core. Typical value used for now.
+    GPUPOWER = 300.0  # Watts per GPU. Typical value used for now.
     MEMPOWER = 0.3725  # Watts per GB of allocated RAM. From DOI:10.1002/advs.202100707
     PUE = 1.56  # Power Usage Effectiveness. Value is average PUE of all data centers
     # surveyed in the Uptime Institute Global Data Center Survey 2024. ToDo: Get the
@@ -16,18 +17,20 @@ class Energy:
     # ToDo: vary CPUPOWER based on CPU type
     # (Can get 'TDP' from manufacturer. Then look up which nodes have which CPU types)
 
-    def __init__(self, cpuhours: float, runtime: float, mem: float) -> None:
+    def __init__(self, cpuhours: float, runtime: float, mem: float, ngpus: int) -> None:
         """Initialize the Energy object.
 
         Args:
             cpuhours: The CPU hours consumed by the job.
             mem: The memory allocated to the job in GB.
             runtime: The total runtime of the job in hours.
+            ngpus: The number of GPUs used by the job.
         """
         # CHECK: does CPUhours assume 100% CPU usage?
         self._cpuhours = cpuhours
         self._mem = mem
         self._runtime = runtime
+        self._ngpus = ngpus
 
     def calculate(self) -> float:
         """Calculate energy consumption in kilowatt-hours.
@@ -36,7 +39,11 @@ class Energy:
             The energy consumed in kilowatt-hours.
         """
         return (
-            (self.CPUPOWER * self._cpuhours + self.MEMPOWER * self._mem * self._runtime)
+            (
+                self.CPUPOWER * self._cpuhours
+                + self.MEMPOWER * self._mem * self._runtime
+                + self.GPUPOWER * self._ngpus * self._runtime
+            )
             * self.PUE
             / 1000.0
         )
