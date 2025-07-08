@@ -21,7 +21,7 @@ if __name__ == "__main__":
     intensity = carbon_intensity.fetch()
 
     # Calculate energy consumption
-    energy = Energy(job._cputime)
+    energy = Energy(job._cputime, job._runtime, job._memory)
     energy_consumed = energy.calculate()
 
     # Calculate emissions
