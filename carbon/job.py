@@ -59,7 +59,7 @@ class Job:
             self._cpuusage = float(resources_used["cpupercent"]) / 100.0
             self._cputime = hours(resources_used["cput"])
             self._ncores = int(resources_used["ncpus"])
-            self._ngpus = int(resources_used["ngpus"])
+            self._ngpus = int(resources_allocated["ngpus"])
 
             # Allocated memory in kilobytes
             # Allocated memory is more relevant for energy consumption.
