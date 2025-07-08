@@ -27,9 +27,11 @@ if __name__ == "__main__":
     # Calculate emissions
     emissions = intensity * energy_consumed
 
-    print(f"Carbon intensity for {job._starttime} is {intensity} gCO2/kWh")
+    gpuhours = job._ngpus * job._runtime
     print(
         f"Energy consumed from {job._cputime:.2f} CPU-hours "
+        f"and {gpuhours:.2f} GPU-hours "
         f"is {energy_consumed:.2f} kWh"
     )
+    print(f"Carbon intensity for {job._starttime} is {intensity} gCO2/kWh")
     print(f"Estimated emissions is {round(emissions)} gCO2")
