@@ -1,11 +1,29 @@
 """The entry point for the carbon program."""
 
 if __name__ == "__main__":
+    import os
     import sys
 
+    import yaml
+
+    from carbon.clusterconfig import ClusterConfig
     from carbon.energy import Energy
     from carbon.intensity import CarbonIntensity
     from carbon.job import Job
+
+    # Get cluster config file path from environment variable
+    config_path = os.environ.get("CARBON_CONFIG")
+    if not config_path:
+        print(
+            "Error: Please set the CARBON_CONFIG environment variable "
+            "to the path of your cluster config file."
+        )
+        sys.exit(1)
+
+    # Load the cluster configuration
+    with open(config_path) as f:
+        config_dict = yaml.safe_load(f)
+    cluster_config = ClusterConfig(**config_dict)
 
     try:
         id = sys.argv[1]
