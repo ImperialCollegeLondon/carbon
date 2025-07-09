@@ -1,5 +1,7 @@
 """Configuration schema for an HPC cluster and its power usage characteristics."""
 
+from datetime import datetime
+
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, PositiveFloat
 
 
@@ -26,6 +28,9 @@ class MemoryConfig(BaseModel):
 
 class DummyJob(BaseModel):
     """Optional dummy job specification for testing and development purposes."""
+
+    start_time: datetime
+    """Start time of the job in ISO format"""
 
     cpu_time: NonNegativeFloat
     """CPU time used by the job in cpu core-hours"""

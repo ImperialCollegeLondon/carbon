@@ -7,6 +7,7 @@ gpus:
 memory:
   per_gb_power_watts: 0.3725  # From DOI:10.1002/advs.202100707
 dummy_job:
+  start_time: '2025-07-09T12:00:00Z'  # Example start time in ISO format
   cpu_time: 16.0       # in cpu-hours
   memory_usage: 8.0    # in GB
   run_time: 5.0        # in hours

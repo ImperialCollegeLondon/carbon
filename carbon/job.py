@@ -37,11 +37,15 @@ class Job:
 
     @classmethod
     def fromResources(
-        cls, id: str, runtime: float, cputime: float, ngpus: int, memory: float
+        cls,
+        id: str,
+        starttime: datetime,
+        runtime: float,
+        cputime: float,
+        ngpus: int,
+        memory: float,
     ) -> Self:
         """Create a job object from compute resource data."""
-        starttime = datetime.now()  # Use current time as start time for job
-
         return cls(
             id=id,
             starttime=starttime,
@@ -88,12 +92,12 @@ class Job:
         # Allocated memory in gb.
         # Allocated memory is more relevant for energy consumption.
         # From DOI:10.1002/advs.202100707
-        mem = resources_allocated["mem"]
-        if mem.endswith("gb"):
-            memory = float(mem[:-2])
+        _memory = resources_allocated["mem"]
+        if _memory.endswith("gb"):
+            memory = float(_memory[:-2])
         else:
             raise NotImplementedError(
-                f"Memory format '{mem}' not implemented. "
+                f"Memory format '{_memory}' not implemented. "
                 "Expected format is 'Xgb' where X is an integer."
             )
 
