@@ -25,7 +25,7 @@ class Job:
         runtime: float,
         cputime: float,
         ngpus: int,
-        memory: int,
+        memory: float,
     ) -> None:
         """Initialise the Job object."""
         self.id = id
@@ -37,7 +37,7 @@ class Job:
 
     @classmethod
     def fromResources(
-        cls, id: str, runtime: float, cputime: float, ngpus: int, memory: int
+        cls, id: str, runtime: float, cputime: float, ngpus: int, memory: float
     ) -> Self:
         """Create a job object from compute resource data."""
         starttime = datetime.now()  # Use current time as start time for job
@@ -90,7 +90,7 @@ class Job:
         # From DOI:10.1002/advs.202100707
         mem = resources_allocated["mem"]
         if mem.endswith("gb"):
-            memory = int(mem[:-2])
+            memory = float(mem[:-2])
         else:
             raise NotImplementedError(
                 f"Memory format '{mem}' not implemented. "

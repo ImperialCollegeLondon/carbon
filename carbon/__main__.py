@@ -32,7 +32,18 @@ if __name__ == "__main__":
         raise
 
     # Get the job data
-    job = Job.fromPBS(id)
+    if cluster_config.dummy_job:
+        # Use dummy job data for testing
+        job = Job.fromResources(
+            id,
+            cluster_config.dummy_job.run_time,
+            cluster_config.dummy_job.cpu_time,
+            cluster_config.dummy_job.ngpus,
+            cluster_config.dummy_job.memory_usage,
+        )
+    else:
+        # Fetch job data from the cluster's job scheduler (e.g., PBS)
+        job = Job.fromPBS(id)
 
     # Fetch carbon intensity at job startime time
     carbon_intensity = CarbonIntensity(job.starttime)
