@@ -1,6 +1,12 @@
 """The entry point for the carbon program."""
 
-if __name__ == "__main__":
+import click
+
+
+@click.command()
+@click.argument("job_id", type=str)
+def main(job_id: str) -> None:
+    """Estimate and display the carbon emissions of a compute job."""
     import os
     import sys
 
@@ -25,17 +31,11 @@ if __name__ == "__main__":
         config_dict = yaml.safe_load(f)
     cluster_config = ClusterConfig(**config_dict)
 
-    try:
-        id = sys.argv[1]
-    except IndexError:
-        print("Usage: poetry run python -m carbon <jobID>")
-        raise
-
     # Get the job data
     if cluster_config.dummy_job:
         # Use dummy job data for testing
         job = Job(
-            id,
+            job_id,
             cluster_config.dummy_job.start_time,
             cluster_config.dummy_job.run_time,
             cluster_config.dummy_job.cpu_time,
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         )
     else:
         # Fetch job data from the cluster's job scheduler (e.g., PBS)
-        job = Job.fromPBS(id)
+        job = Job.fromPBS(job_id)
 
     # Fetch carbon intensity at job startime time
     carbon_intensity = CarbonIntensity(job.starttime)
@@ -65,3 +65,7 @@ if __name__ == "__main__":
     )
     print(f"Carbon intensity for {job.starttime} is {intensity} gCO2/kWh")
     print(f"Estimated emissions is {round(emissions)} gCO2")
+
+
+if __name__ == "__main__":
+    main()
