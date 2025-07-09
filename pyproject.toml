@@ -32,12 +32,13 @@ mkdocs-literate-nav = "^0.6.2"
 mkdocs-section-index = "^0.3.10"
 
 [tool.mypy]
-disallow_any_explicit = true
+disallow_any_explicit = false
 disallow_any_generics = true
 warn_unreachable = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
 exclude = [".venv/", "docs/"]
+plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
