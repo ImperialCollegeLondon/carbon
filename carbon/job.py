@@ -21,7 +21,7 @@ class Job:
     def __init__(
         self,
         id: str,
-        startime: datetime,
+        starttime: datetime,
         runtime: float,
         cputime: float,
         ngpus: int,
@@ -29,11 +29,27 @@ class Job:
     ) -> None:
         """Initialise the Job object."""
         self.id = id
-        self.starttime = startime
+        self.starttime = starttime
         self.runtime = runtime
         self.cputime = cputime
         self.ngpus = ngpus
         self.memory = memory
+
+    @classmethod
+    def fromResources(
+        cls, id: str, runtime: float, cputime: float, ngpus: int, memory: int
+    ) -> Self:
+        """Create a job object from compute resource data."""
+        starttime = datetime.now()  # Use current time as start time for job
+
+        return cls(
+            id=id,
+            starttime=starttime,
+            runtime=runtime,
+            cputime=cputime,
+            ngpus=ngpus,
+            memory=memory,
+        )
 
     @classmethod
     def fromPBS(cls, id: str) -> Self:
@@ -84,7 +100,7 @@ class Job:
         # Create a Job object with the fetched data
         return cls(
             id=internal_id,
-            startime=starttime,
+            starttime=starttime,
             runtime=hours(resources_used["walltime"]),
             cputime=hours(resources_used["cput"]),
             memory=memory,
