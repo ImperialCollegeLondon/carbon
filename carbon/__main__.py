@@ -32,24 +32,24 @@ if __name__ == "__main__":
         raise
 
     # Get the job data
-    job = Job(id)
+    job = Job.fromPBS(id)
 
     # Fetch carbon intensity at job startime time
-    carbon_intensity = CarbonIntensity(job._starttime)
+    carbon_intensity = CarbonIntensity(job.starttime)
     intensity = carbon_intensity.fetch()
 
     # Calculate energy consumption
-    energy = Energy(job._cputime, job._runtime, job._memory, job._ngpus)
+    energy = Energy(job.cputime, job.runtime, job.memory, job.ngpus)
     energy_consumed = energy.calculate()
 
     # Calculate emissions
     emissions = intensity * energy_consumed
 
-    gpuhours = job._ngpus * job._runtime
+    gpuhours = job.ngpus * job.runtime
     print(
-        f"Energy consumed from {job._cputime:.2f} CPU-hours "
+        f"Energy consumed from {job.cputime:.2f} CPU-hours "
         f"and {gpuhours:.2f} GPU-hours "
         f"is {energy_consumed:.2f} kWh"
     )
-    print(f"Carbon intensity for {job._starttime} is {intensity} gCO2/kWh")
+    print(f"Carbon intensity for {job.starttime} is {intensity} gCO2/kWh")
     print(f"Estimated emissions is {round(emissions)} gCO2")
