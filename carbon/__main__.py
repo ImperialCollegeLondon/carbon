@@ -4,10 +4,15 @@ import click
 
 
 @click.command()
+@click.option(
+    "--config_path",
+    envvar="CARBON_CONFIG",
+    type=click.Path(),
+    help="Path to the cluster configuration file.",
+)
 @click.argument("job_id", type=str)
-def main(job_id: str) -> None:
+def main(job_id: str, config_path: str) -> None:
     """Estimate and display the carbon emissions of a compute job."""
-    import os
     import sys
 
     import yaml
@@ -18,11 +23,11 @@ def main(job_id: str) -> None:
     from carbon.job import Job
 
     # Get cluster config file path from environment variable
-    config_path = os.environ.get("CARBON_CONFIG")
     if not config_path:
         print(
-            "Error: Please set the CARBON_CONFIG environment variable "
-            "to the path of your cluster config file."
+            "Error: Missing CARBON_CONFIG path. Please set the CARBON_CONFIG "
+            "environment variable to the path of your cluster config file OR "
+            "use the --config_path option to specify the path."
         )
         sys.exit(1)
 
