@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # Get the job data
     if cluster_config.dummy_job:
         # Use dummy job data for testing
-        job = Job.fromResources(
+        job = Job(
             id,
             cluster_config.dummy_job.start_time,
             cluster_config.dummy_job.run_time,

@@ -36,26 +36,6 @@ class Job:
         self.memory = memory
 
     @classmethod
-    def fromResources(
-        cls,
-        id: str,
-        starttime: datetime,
-        runtime: float,
-        cputime: float,
-        ngpus: int,
-        memory: float,
-    ) -> Self:
-        """Create a job object from compute resource data."""
-        return cls(
-            id=id,
-            starttime=starttime,
-            runtime=runtime,
-            cputime=cputime,
-            ngpus=ngpus,
-            memory=memory,
-        )
-
-    @classmethod
     def fromPBS(cls, id: str) -> Self:
         """Create a job object by fetching data from PBS based on the job ID."""
         cmd = f"qstat -xfF json {id}"
