@@ -1,4 +1,4 @@
 Name,Value,Unit,Source
 CAR_UK,173.04,gCO2e/km,https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025
-TRAIN_NATIONAL_UK,35.46,gCO2e/passenger/km,https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025
-FLIGHT_LONGHAUL_UK,152.82,gCO2e/passenger/km,https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025
+TRAIN_NATIONAL_UK,35.46,gCO2e/km/passenger,https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025
+FLIGHT_LONGHAUL_UK,152.82,gCO2e/km/passenger,https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025

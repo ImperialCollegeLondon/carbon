@@ -79,6 +79,8 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
 
     # Do comparisons if requested
     if compare:
+        from carbon.comparisons import EmissionsComparison
+
         COMPARISONS_PATH = Path(__file__).parent / "data" / "comparisons.csv"
         print("----- Comparisons -----")
         if not COMPARISONS_PATH.exists():
@@ -88,7 +90,8 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
                 "contains the comparisons.csv file."
             )
         else:
-            print(COMPARISONS_PATH)
+            comparer = EmissionsComparison(COMPARISONS_PATH)
+            comparer.print_comparisons(emissions)
 
 
 if __name__ == "__main__":
