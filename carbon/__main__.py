@@ -5,15 +5,21 @@ import click
 
 @click.command()
 @click.option(
+    "--compare",
+    is_flag=True,
+    help="Compare the carbon emissions of the compute job with other activities.",
+)
+@click.option(
     "--config_path",
     envvar="CARBON_CONFIG",
     type=click.Path(),
     help="Path to the cluster configuration file.",
 )
 @click.argument("job_id", type=str)
-def main(job_id: str, config_path: str) -> None:
+def main(job_id: str, compare: bool, config_path: str) -> None:
     """Estimate and display the carbon emissions of a compute job."""
     import sys
+    from pathlib import Path
 
     import yaml
 
@@ -70,6 +76,19 @@ def main(job_id: str, config_path: str) -> None:
     )
     print(f"Carbon intensity for {job.starttime} is {intensity} gCO2/kWh")
     print(f"Estimated emissions is {round(emissions)} gCO2")
+
+    # Do comparisons if requested
+    if compare:
+        COMPARISONS_PATH = Path(__file__).parent / "data" / "comparisons.csv"
+        print("----- Comparisons -----")
+        if not COMPARISONS_PATH.exists():
+            print(
+                f"Error: Missing comparisons data file at {COMPARISONS_PATH}. "
+                "Please ensure the data directory is present and "
+                "contains the comparisons.csv file."
+            )
+        else:
+            print(COMPARISONS_PATH)
 
 
 if __name__ == "__main__":
