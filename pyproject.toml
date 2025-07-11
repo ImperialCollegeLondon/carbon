@@ -33,7 +33,7 @@ mkdocs-literate-nav = "^0.6.2"
 mkdocs-section-index = "^0.3.10"
 
 [tool.mypy]
-disallow_any_explicit = false
+disallow_any_explicit = true
 disallow_any_generics = true
 warn_unreachable = true
 warn_unused_ignores = true
@@ -44,6 +44,10 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
 
 [tool.pytest.ini_options]
 addopts = "-v -p no:warnings --cov=carbon --cov-branch --cov-report=html --cov-report=xml --doctest-modules --ignore=carbon/__main__.py --ignore=docs/"
