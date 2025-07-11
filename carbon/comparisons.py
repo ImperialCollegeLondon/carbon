@@ -35,8 +35,9 @@ class TravelEmissionsComparison:
     def print_comparisons(self, emissions_gco2: float) -> None:
         """Prints the equivalent of each item for the given emissions."""
         equivalents = self.get_equivalents(emissions_gco2)
+        print("Equivalent to:")
         for method, kilometers, note in equivalents:
-            print(f"Equivalent to {kilometers:.1f} km of {method}{note}")
+            print(f"    {method} {kilometers:.1f} km {note}")
 
 
 class FoodEmissionsComparison:
@@ -71,5 +72,9 @@ class FoodEmissionsComparison:
     def print_comparisons(self, emissions_gco2: float) -> None:
         """Prints the equivalent of each item for the given emissions."""
         equivalents = self.get_equivalents(emissions_gco2)
+        print("Equivalent to:")
         for food, portions, portion_name in equivalents:
-            print(f"Equivalent to {portions:.1f} {portion_name} of {food}")
+            if portion_name:
+                print(f"    {portions:.1f} {portion_name} of {food}")
+            else:
+                print(f"    {portions:.1f} {food}")

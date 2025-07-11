@@ -1,4 +1,4 @@
 Method,gCO2ePerKm,Note
-CAR_UK,173.04,""
-TRAIN_NATIONAL_UK,35.46," per passenger"
-FLIGHT_LONGHAUL_UK,152.82," per passenger"
+Driving,173.04,""
+Flying,152.82,"(longhaul, per passenger)"
+Travelling by train,35.46,"(per passenger)"
