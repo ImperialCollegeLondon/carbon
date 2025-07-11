@@ -79,19 +79,35 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
 
     # Do comparisons if requested
     if compare:
-        from carbon.comparisons import EmissionsComparison
+        from carbon.comparisons import (
+            FoodEmissionsComparison,
+            TravelEmissionsComparison,
+        )
 
-        COMPARISONS_PATH = Path(__file__).parent / "data" / "comparisons.csv"
-        print("----- Comparisons -----")
-        if not COMPARISONS_PATH.exists():
+        TRAVEL_PATH = Path(__file__).parent / "data" / "travel.csv"
+        FOOD_PATH = Path(__file__).parent / "data" / "food.csv"
+
+        if not TRAVEL_PATH.exists():
             print(
-                f"Error: Missing comparisons data file at {COMPARISONS_PATH}. "
+                f"Error: Missing comparisons data file at {TRAVEL_PATH}. "
                 "Please ensure the data directory is present and "
-                "contains the comparisons.csv file."
+                "contains the travel.csv file."
             )
         else:
-            comparer = EmissionsComparison(COMPARISONS_PATH)
-            comparer.print_comparisons(emissions)
+            print("----- Travel Comparisons -----")
+            travel_comparer = TravelEmissionsComparison(TRAVEL_PATH)
+            travel_comparer.print_comparisons(emissions)
+
+        if not FOOD_PATH.exists():
+            print(
+                f"Error: Missing comparisons data file at {FOOD_PATH}. "
+                "Please ensure the data directory is present and "
+                "contains the food.csv file."
+            )
+        else:
+            print("----- Food Comparisons -----")
+            food_comparer = FoodEmissionsComparison(FOOD_PATH)
+            food_comparer.print_comparisons(emissions)
 
 
 if __name__ == "__main__":
