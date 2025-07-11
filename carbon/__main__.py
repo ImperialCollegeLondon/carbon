@@ -5,15 +5,21 @@ import click
 
 @click.command()
 @click.option(
+    "--compare",
+    is_flag=True,
+    help="Compare the carbon emissions of the compute job with other activities.",
+)
+@click.option(
     "--config_path",
     envvar="CARBON_CONFIG",
     type=click.Path(),
     help="Path to the cluster configuration file.",
 )
 @click.argument("job_id", type=str)
-def main(job_id: str, config_path: str) -> None:
+def main(job_id: str, compare: bool, config_path: str) -> None:
     """Estimate and display the carbon emissions of a compute job."""
     import sys
+    from pathlib import Path
 
     import yaml
 
@@ -70,6 +76,35 @@ def main(job_id: str, config_path: str) -> None:
     )
     print(f"Carbon intensity for {job.starttime} is {intensity} gCO2/kWh")
     print(f"Estimated emissions is {round(emissions)} gCO2")
+
+    # Do comparisons if requested
+    if compare:
+        from carbon.comparisons import Food, Travel
+
+        TRAVEL_PATH = Path(__file__).parent / "data" / "travel.csv"
+        FOOD_PATH = Path(__file__).parent / "data" / "food.csv"
+
+        if not TRAVEL_PATH.exists():
+            print(
+                f"Error: Missing comparisons data file at {TRAVEL_PATH}. "
+                "Please ensure the data directory is present and "
+                "contains the travel.csv file."
+            )
+        else:
+            print("----- Travel Comparisons -----")
+            travel_comparer = Travel(TRAVEL_PATH)
+            travel_comparer.print_comparisons(emissions)
+
+        if not FOOD_PATH.exists():
+            print(
+                f"Error: Missing comparisons data file at {FOOD_PATH}. "
+                "Please ensure the data directory is present and "
+                "contains the food.csv file."
+            )
+        else:
+            print("----- Food Comparisons -----")
+            food_comparer = Food(FOOD_PATH)
+            food_comparer.print_comparisons(emissions)
 
 
 if __name__ == "__main__":
