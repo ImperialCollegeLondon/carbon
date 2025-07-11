@@ -79,10 +79,7 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
 
     # Do comparisons if requested
     if compare:
-        from carbon.comparisons import (
-            FoodEmissionsComparison,
-            TravelEmissionsComparison,
-        )
+        from carbon.comparisons import Food, Travel
 
         TRAVEL_PATH = Path(__file__).parent / "data" / "travel.csv"
         FOOD_PATH = Path(__file__).parent / "data" / "food.csv"
@@ -95,7 +92,7 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
             )
         else:
             print("----- Travel Comparisons -----")
-            travel_comparer = TravelEmissionsComparison(TRAVEL_PATH)
+            travel_comparer = Travel(TRAVEL_PATH)
             travel_comparer.print_comparisons(emissions)
 
         if not FOOD_PATH.exists():
@@ -106,7 +103,7 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
             )
         else:
             print("----- Food Comparisons -----")
-            food_comparer = FoodEmissionsComparison(FOOD_PATH)
+            food_comparer = Food(FOOD_PATH)
             food_comparer.print_comparisons(emissions)
 
 

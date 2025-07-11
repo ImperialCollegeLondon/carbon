@@ -1,14 +1,15 @@
 """Module for comparing compute job emissions to other sources."""
 
 import csv
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 
-class TravelEmissionsComparison:
-    """Compares emissions to travel methods."""
+class EmissionsComparison(ABC):
+    """Loads emissions data from csv and compares to job emissions."""
 
     def __init__(self, data_path: Path) -> None:
-        """Initialize the TravelEmissionsComparison object."""
+        """Initialize the EmissionsComparison object."""
         self.data_path = data_path
         self.comparisons = self._load_comparisons()
 
@@ -20,6 +21,20 @@ class TravelEmissionsComparison:
             for row in reader:
                 comparisons.append(row)
         return comparisons
+
+    @abstractmethod
+    def get_equivalents(self, emissions_gco2: float) -> list[tuple[str, float, str]]:
+        """For each item, calculate the amount that would emit the same gCO2."""
+        pass
+
+    @abstractmethod
+    def print_comparisons(self, emissions_gco2: float) -> None:
+        """Prints the equivalent of each item for the given emissions."""
+        pass
+
+
+class Travel(EmissionsComparison):
+    """Compares emissions to travel methods."""
 
     def get_equivalents(self, emissions_gco2: float) -> list[tuple[str, float, str]]:
         """For each item, calculate the amount that would emit the same gCO2."""
@@ -40,22 +55,8 @@ class TravelEmissionsComparison:
             print(f"    {method} {kilometers:.1f} km {note}")
 
 
-class FoodEmissionsComparison:
+class Food(EmissionsComparison):
     """Compares emissions to food data."""
-
-    def __init__(self, data_path: Path) -> None:
-        """Initialize the FoodEmissionsComparison object."""
-        self.data_path = data_path
-        self.comparisons = self._load_comparisons()
-
-    def _load_comparisons(self) -> list[dict[str, str]]:
-        """Load comparison data from a CSV file."""
-        comparisons = []
-        with open(self.data_path, newline="") as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                comparisons.append(row)
-        return comparisons
 
     def get_equivalents(self, emissions_gco2: float) -> list[tuple[str, float, str]]:
         """For each item, calculate the amount that would emit the same gCO2."""
