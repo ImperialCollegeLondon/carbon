@@ -11,7 +11,7 @@ authors = [
 python = "^3.13"
 types-requests = "^2.32.4.20250611"
 pydantic = "^2.11.7"
-pyaml = "^25.5.0"
+pyaml = "^25.7.0"
 types-pyyaml = "^6.0.12.20250516"
 click = "^8.2.1"
 
