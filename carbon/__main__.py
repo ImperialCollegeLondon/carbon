@@ -62,8 +62,13 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
     intensity = carbon_intensity.fetch()
 
     # Calculate energy consumption
-    energy = Energy(job.cputime, job.runtime, job.memory, job.ngpus)
-    energy_consumed = energy.calculate()
+    energy = Energy(
+        cluster_config.cpus.per_core_power_watts,
+        cluster_config.gpus.per_gpu_power_watts,
+        cluster_config.memory.per_gb_power_watts,
+        cluster_config.pue,
+    )
+    energy_consumed = energy.calculate(job.cputime, job.runtime, job.memory, job.ngpus)
 
     # Calculate emissions
     emissions = intensity * energy_consumed
