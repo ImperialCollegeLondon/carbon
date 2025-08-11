@@ -16,7 +16,7 @@ types-pyyaml = "^6.0.12.20250516"
 click = "^8.2.1"
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.17.0"
+mypy = "^1.17.1"
 pytest = "^8.4.0"
 pytest-cov = "^6.2.1"
 pytest-mock = "^3.14.1"
