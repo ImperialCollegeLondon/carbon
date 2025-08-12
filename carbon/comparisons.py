@@ -6,15 +6,28 @@ from pathlib import Path
 
 
 class EmissionsComparison(ABC):
-    """Loads emissions data from csv and compares to job emissions."""
+    """Abstract base class for comparing compute job emissions to other sources.
+
+    Args:
+        data_path (Path): Path to the CSV file containing comparison data.
+    """
 
     def __init__(self, data_path: Path) -> None:
-        """Initialize the EmissionsComparison object."""
+        """Initialize the EmissionsComparison object and load comparison data from CSV.
+
+        Args:
+            data_path (Path): Path to the CSV file containing comparison data.
+        """
         self.data_path = data_path
         self.comparisons = self._load_comparisons()
 
     def _load_comparisons(self) -> list[dict[str, str]]:
-        """Load comparison data from a CSV file."""
+        """Load comparison data from a CSV file.
+
+        Returns:
+            list[dict[str, str]]: List of dictionaries, each representing a row from the
+                CSV file.
+        """
         comparisons = []
         with open(self.data_path, newline="") as csvfile:
             reader = csv.DictReader(csvfile)
@@ -24,20 +37,41 @@ class EmissionsComparison(ABC):
 
     @abstractmethod
     def get_equivalents(self, emissions_gco2: float) -> list[tuple[str, float, str]]:
-        """For each item, calculate the amount that would emit the same gCO2."""
+        """Calculates the amount of each item that would emit the same emissions.
+
+        Args:
+            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
+                against.
+
+        Returns:
+            list[tuple[str, float, str]]: List of (item, amount, unit/note) tuples.
+        """
         pass
 
     @abstractmethod
     def print_comparisons(self, emissions_gco2: float) -> None:
-        """Prints the equivalent of each item for the given emissions."""
+        """Print the equivalent of each item for the given emissions.
+
+        Args:
+            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
+                against.
+        """
         pass
 
 
 class Travel(EmissionsComparison):
-    """Compares emissions to travel methods."""
+    """Compares emissions to travel methods using reference data."""
 
     def get_equivalents(self, emissions_gco2: float) -> list[tuple[str, float, str]]:
-        """For each item, calculate the amount that would emit the same gCO2."""
+        """Calculates the distance via each method that would emit the same emissions.
+
+        Args:
+            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
+                against.
+
+        Returns:
+            list[tuple[str, float, str]]: List of (method, kilometers, note) tuples.
+        """
         results = []
         for comp in self.comparisons:
             try:
@@ -48,7 +82,12 @@ class Travel(EmissionsComparison):
         return results
 
     def print_comparisons(self, emissions_gco2: float) -> None:
-        """Prints the equivalent of each item for the given emissions."""
+        """Print the equivalent travel distances for the given emissions.
+
+        Args:
+            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
+                against.
+        """
         equivalents = self.get_equivalents(emissions_gco2)
         print("Equivalent to:")
         for method, kilometers, note in equivalents:
@@ -56,10 +95,18 @@ class Travel(EmissionsComparison):
 
 
 class Food(EmissionsComparison):
-    """Compares emissions to food data."""
+    """Compares emissions to food data using reference data."""
 
     def get_equivalents(self, emissions_gco2: float) -> list[tuple[str, float, str]]:
-        """For each item, calculate the amount that would emit the same gCO2."""
+        """Calculate the number of portions that would emit the same emissions.
+
+        Args:
+            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
+                against.
+
+        Returns:
+            list[tuple[str, float, str]]: List of (food, portions, portion_name) tuples.
+        """
         results = []
         for comp in self.comparisons:
             try:
@@ -71,7 +118,12 @@ class Food(EmissionsComparison):
         return results
 
     def print_comparisons(self, emissions_gco2: float) -> None:
-        """Prints the equivalent of each item for the given emissions."""
+        """Print the equivalent food portions for the given emissions.
+
+        Args:
+            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
+                against.
+        """
         equivalents = self.get_equivalents(emissions_gco2)
         print("Equivalent to:")
         for food, portions, portion_name in equivalents:

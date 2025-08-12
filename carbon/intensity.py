@@ -11,7 +11,16 @@ import requests
 
 
 class CarbonIntensity:
-    """A class to represent carbon intensity data."""
+    """Represents carbon intensity data.
+
+    Represents carbon intensity data and provides methods to fetch carbon intensity
+    for a given time and region from the Carbon Intensity API.
+
+    Attributes:
+        REGIONID (int): The region ID for the API (default: 13 for London).
+        _stime (str): Start time in ISO format for the API query.
+        _stime_plus (str): End time in ISO format for the API query.
+    """
 
     REGIONID = 13  # London region ID for carbon intensity API
 
@@ -19,13 +28,20 @@ class CarbonIntensity:
         """Initialize the CarbonIntensity object.
 
         Args:
-            time: The time for which to fetch carbon intensity data.
+            time (datetime): The time for which to fetch carbon intensity data.
         """
         self._stime = time.strftime("%Y-%m-%dT%H:%MZ")
         self._stime_plus = (time + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%MZ")
 
     def fetch(self) -> float:
-        """Fetch carbon intensity data."""
+        """Fetch carbon intensity data from the API for the specified time and region.
+
+        Returns:
+            float: The forecasted carbon intensity in gCO2/kWh.
+
+        Raises:
+            ValueError: If the API request fails or returns an error status.
+        """
         headers = {"Accept": "application/json"}
         response = requests.get(
             f"https://api.carbonintensity.org.uk/regional/intensity/{self._stime}/{self._stime_plus}/regionid/{self.REGIONID}",

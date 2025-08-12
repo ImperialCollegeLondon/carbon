@@ -1,6 +1,7 @@
 """The job module.
 
-This module provides functionality for processing and representing a compute job
+This module provides functionality for processing and representing a compute job,
+including parsing job data from a scheduler and converting time formats.
 """
 
 import json
@@ -10,13 +11,29 @@ from typing import Self
 
 
 def hours(time: str) -> float:
-    """Convert a time string in HH:MM:SS format to hours."""
+    """Convert a time string in HH:MM:SS format to hours.
+
+    Args:
+        time (str): Time string in the format 'HH:MM:SS'.
+
+    Returns:
+        float: The time in hours.
+    """
     h, m, s = time.split(":")
     return float(h) + float(m) / 60.0 + float(s) / 3600.0
 
 
 class Job:
-    """A class to represent a compute job."""
+    """Represents a compute job, including its resource usage and timing information.
+
+    Attributes:
+        id (str): The job identifier.
+        starttime (datetime): The start time of the job.
+        runtime (float): The total runtime of the job in hours.
+        cputime (float): The total CPU time used by the job in core-hours.
+        ngpus (int): The number of GPUs used by the job.
+        memory (float): The memory allocated to the job in GB.
+    """
 
     def __init__(
         self,
@@ -27,7 +44,16 @@ class Job:
         ngpus: int,
         memory: float,
     ) -> None:
-        """Initialise the Job object."""
+        """Initialize the Job object.
+
+        Args:
+            id (str): The job identifier.
+            starttime (datetime): The start time of the job.
+            runtime (float): The total runtime of the job in hours.
+            cputime (float): The total CPU time used by the job in core-hours.
+            ngpus (int): The number of GPUs used by the job.
+            memory (float): The memory allocated to the job in GB.
+        """
         self.id = id
         self.starttime = starttime
         self.runtime = runtime
@@ -37,7 +63,19 @@ class Job:
 
     @classmethod
     def fromPBS(cls, id: str) -> Self:
-        """Create a job object by fetching data from PBS based on the job ID."""
+        """Create a Job object by fetching data from PBS based on the job ID.
+
+        Args:
+            id (str): The job identifier to fetch from the scheduler.
+
+        Returns:
+            Job: An instance of the Job class populated with scheduler data.
+
+        Raises:
+            ValueError: If fetching or parsing job data fails, or if no job data is
+                found.
+            NotImplementedError: If the memory format is not supported.
+        """
         cmd = f"qstat -xfF json {id}"
 
         try:
