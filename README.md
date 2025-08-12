@@ -32,6 +32,12 @@ To get started:
    pre-commit install
    ```
 
+1. Specify the location of your cluster configuration file:
+
+   ```bash
+   export CARBON_CONFIG=/path/to/config.yaml
+   ```
+
 1. Run the main app:
 
    ```bash
