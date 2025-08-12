@@ -1,24 +1,6 @@
 # carbon
 
-Calculates carbon emissions of compute jobs run on the Imperial College London HPC clusters.
-
-How it works: ToDo
-
-This is a Python application that uses [poetry](https://python-poetry.org) for packaging
-and dependency management. It also provides [pre-commit](https://pre-commit.com/) hooks
-(for [ruff](https://pypi.org/project/ruff/) and
-[mypy](https://mypy.readthedocs.io/en/stable/)) and automated tests using
-[pytest](https://pytest.org/) and [GitHub Actions](https://github.com/features/actions).
-
-## For users
-
-Installation: ToDo.
-
-Running:
-
-```bash
-carbon <job ID>
-```
+Estimates carbon emissions of compute jobs run on the Imperial College London HPC clusters.
 
 ## For developers
 
@@ -48,6 +30,12 @@ To get started:
 
    ```bash
    pre-commit install
+   ```
+
+1. Specify the location of your cluster configuration file:
+
+   ```bash
+   export CARBON_CONFIG=/path/to/config.yaml
    ```
 
 1. Run the main app:
