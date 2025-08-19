@@ -1,4 +1,9 @@
-"""The entry point for the carbon program."""
+"""The entry point for the carbon program.
+
+This module provides a CLI for estimating and displaying the carbon emissions of a
+compute job, optionally comparing the emissions to other activities such as travel and
+food consumption.
+"""
 
 import click
 
@@ -17,7 +22,16 @@ import click
 )
 @click.argument("job_id", type=str)
 def main(job_id: str, compare: bool, config_path: str) -> None:
-    """Estimate and display the carbon emissions of a compute job."""
+    """Estimate and display the carbon emissions of a compute job.
+
+    Args:
+        job_id (str): The job identifier to analyze.
+        compare (bool): If True, compare emissions to other activities.
+        config_path (str): Path to the cluster configuration file.
+
+    Returns:
+        None
+    """
     import sys
     from pathlib import Path
 
