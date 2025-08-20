@@ -1,14 +1,18 @@
 cluster_name: DummyCluster
 pue: 1.3  # Power Usage Effectiveness
-cpus:
-  per_core_power_watts: 12  # Typical power usage per CPU core in watts
-gpus:
-  per_gpu_power_watts: 300  # Typical power usage per GPU in watts
-memory:
-  per_gb_power_watts: 0.3725  # From DOI:10.1002/advs.202100707
+partitions:
+  - name: dummy_partition
+    cpu_model: AMD EPYC 7742
+    per_core_power_watts: 3.52
+    gpu_model: NVIDIA QUADRO RTX 6000
+    per_gpu_power_watts: 295
+    per_gb_power_watts: 0.3725  # From DOI:10.1002/advs.202100707
+    node_prefixes:
+      - dummy_node
 dummy_job:
   start_time: '2025-07-09T12:00:00Z'  # Example start time in ISO format
   cpu_time: 192.0       # in cpu-hours
   memory_usage: 12.0    # in GB
   run_time: 24.0        # in hours
   ngpus: 1
+  node: dummy_node

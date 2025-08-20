@@ -56,7 +56,7 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
         config_dict = yaml.safe_load(f)
     cluster_config = ClusterConfig(**config_dict)
 
-    # Get the job data
+    # Get the job data and compute partition
     if cluster_config.dummy_job:
         # Use dummy job data for testing
         job = Job(
@@ -66,23 +66,41 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
             cluster_config.dummy_job.cpu_time,
             cluster_config.dummy_job.ngpus,
             cluster_config.dummy_job.memory_usage,
+            cluster_config.dummy_job.node,
         )
     else:
         # Fetch job data from the cluster's job scheduler (e.g., PBS)
         job = Job.fromPBS(job_id)
 
-    # Fetch carbon intensity at job startime time
-    carbon_intensity = CarbonIntensity(job.starttime)
-    intensity = carbon_intensity.fetch()
+    # Get the compute partition from the job's node label
+    for p in cluster_config.partitions:
+        for prefix in p.node_prefixes:
+            if job.node.startswith(prefix):
+                partition = p
+                break
+    # ToDo: if no partition found from node label, warn user and resort to a default
+
+    if partition.per_gpu_power_watts is None:
+        if job.ngpus > 0:
+            raise ValueError(
+                "Error: Job data indicates ngpus > 0, but GPU power "
+                "missing from cluster specification."
+            )
+        else:
+            partition.per_gpu_power_watts = 0
 
     # Calculate energy consumption
     energy = Energy(
-        cluster_config.cpus.per_core_power_watts,
-        cluster_config.gpus.per_gpu_power_watts,
-        cluster_config.memory.per_gb_power_watts,
+        partition.per_core_power_watts,
+        partition.per_gpu_power_watts,
+        partition.per_gb_power_watts,
         cluster_config.pue,
     )
     energy_consumed = energy.calculate(job.cputime, job.runtime, job.memory, job.ngpus)
+
+    # Fetch carbon intensity at job startime time
+    carbon_intensity = CarbonIntensity(job.starttime)
+    intensity = carbon_intensity.fetch()
 
     # Calculate emissions
     emissions = intensity * energy_consumed
