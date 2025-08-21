@@ -54,35 +54,58 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
     # Load the cluster configuration
     with open(config_path) as f:
         config_dict = yaml.safe_load(f)
-    cluster_config = ClusterConfig(**config_dict)
+    config = ClusterConfig(**config_dict)
 
-    # Get the job data
-    if cluster_config.dummy_job:
+    # Get the job data and node hardware info
+    from carbon.node import Node
+
+    if config.dummy_job:
         # Use dummy job data for testing
+        dummy = config.dummy_job
         job = Job(
             job_id,
-            cluster_config.dummy_job.start_time,
-            cluster_config.dummy_job.run_time,
-            cluster_config.dummy_job.cpu_time,
-            cluster_config.dummy_job.ngpus,
-            cluster_config.dummy_job.memory_usage,
+            dummy.start_time,
+            dummy.run_time,
+            dummy.cpu_time,
+            dummy.ngpus,
+            dummy.memory_usage,
+            dummy.node,
+        )
+        node = Node(
+            name=dummy.node,
+            cpu_type=dummy.cpu_type,
+            gpu_type=dummy.gpu_type,
+            mem_type=dummy.mem_type,
+            per_core_power_watts=config.cpus[dummy.cpu_type]["per_core_power_watts"],
+            per_gpu_power_watts=config.gpus[dummy.gpu_type]["per_gpu_power_watts"]
+            if dummy.gpu_type
+            else 0.0,
+            per_gb_power_watts=config.memory[dummy.mem_type]["per_gb_power_watts"],
         )
     else:
-        # Fetch job data from the cluster's job scheduler (e.g., PBS)
+        # Fetch job data from the cluster's job scheduler
         job = Job.fromPBS(job_id)
+        node = Node.fromPBS(
+            job.node,
+            {
+                "cpus": config.cpus,
+                "gpus": config.gpus,
+                "memory": config.memory,
+            },
+        )
+
+    # Calculate energy consumption
+    energy = Energy(
+        node.per_core_power_watts,
+        node.per_gpu_power_watts if node.per_gpu_power_watts is not None else 0.0,
+        node.per_gb_power_watts,
+        config.pue,
+    )
+    energy_consumed = energy.calculate(job.cputime, job.runtime, job.memory, job.ngpus)
 
     # Fetch carbon intensity at job startime time
     carbon_intensity = CarbonIntensity(job.starttime)
     intensity = carbon_intensity.fetch()
-
-    # Calculate energy consumption
-    energy = Energy(
-        cluster_config.cpus.per_core_power_watts,
-        cluster_config.gpus.per_gpu_power_watts,
-        cluster_config.memory.per_gb_power_watts,
-        cluster_config.pue,
-    )
-    energy_consumed = energy.calculate(job.cputime, job.runtime, job.memory, job.ngpus)
 
     # Calculate emissions
     emissions = intensity * energy_consumed

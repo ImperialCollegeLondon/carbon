@@ -17,11 +17,11 @@ class Energy:
     def __init__(
         self, cpupower: float, gpupower: float, mempower: float, pue: float
     ) -> None:
-        """Initialize the Energy object.
+        """Initialize the Energy object with GPU power.
 
         Args:
             cpupower (float): Power usage per CPU core in watts.
-            gpupower (float): Power usage per GPU in watts.
+            gpupower (float | None): Power usage per GPU in watts.
             mempower (float): Power usage per GB of memory in watts.
             pue (float): Power Usage Effectiveness of the data center.
         """

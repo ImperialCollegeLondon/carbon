@@ -33,6 +33,7 @@ class Job:
         cputime (float): The total CPU time used by the job in core-hours.
         ngpus (int): The number of GPUs used by the job.
         memory (float): The memory allocated to the job in GB.
+        node (str): The node the job was executed on.
     """
 
     def __init__(
@@ -43,6 +44,7 @@ class Job:
         cputime: float,
         ngpus: int,
         memory: float,
+        node: str,
     ) -> None:
         """Initialize the Job object.
 
@@ -53,6 +55,7 @@ class Job:
             cputime (float): The total CPU time used by the job in core-hours.
             ngpus (int): The number of GPUs used by the job.
             memory (float): The memory allocated to the job in GB.
+            node (str): The node the job was executed on.
         """
         self.id = id
         self.starttime = starttime
@@ -60,6 +63,7 @@ class Job:
         self.cputime = cputime
         self.ngpus = ngpus
         self.memory = memory
+        self.node = node
 
     @classmethod
     def fromPBS(cls, id: str) -> Self:
@@ -100,6 +104,7 @@ class Job:
         # Here we assume only one job was captured by qstat.
         # If multiple jobs are returned, this will only return the first one.
         internal_id = next(iter(job_data["Jobs"]))
+        node = job_data["Jobs"][f"{id}.pbs-7"]["exec_host"].split("/", 1)[0]
         resources_used = job_data["Jobs"][internal_id]["resources_used"]
         resources_allocated = job_data["Jobs"][internal_id]["Resource_List"]
 
@@ -127,4 +132,5 @@ class Job:
             cputime=hours(resources_used["cput"]),
             memory=memory,
             ngpus=int(resources_allocated["ngpus"]),
+            node=node,
         )
