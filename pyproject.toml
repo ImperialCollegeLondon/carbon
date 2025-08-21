@@ -14,6 +14,7 @@ pydantic = "^2.11.7"
 pyaml = "^25.7.0"
 types-pyyaml = "^6.0.12.20250809"
 click = "^8.2.1"
+numpy = "^2.3.2"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.17.1"
