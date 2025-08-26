@@ -111,9 +111,11 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
     emissions = intensity * energy_consumed
 
     gpuhours = job.ngpus * job.runtime
+    memhours = job.memory * job.runtime
     print(
         f"Energy consumed from {job.cputime:.2f} CPU-hours "
         f"and {gpuhours:.2f} GPU-hours "
+        f"and {memhours:.2f} GB-hours "
         f"is {energy_consumed:.2f} kWh"
     )
     print(f"Carbon intensity for {job.starttime} is {intensity} gCO2e/kWh")
