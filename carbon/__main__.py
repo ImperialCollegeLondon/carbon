@@ -116,8 +116,8 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
         f"and {gpuhours:.2f} GPU-hours "
         f"is {energy_consumed:.2f} kWh"
     )
-    print(f"Carbon intensity for {job.starttime} is {intensity} gCO2/kWh")
-    print(f"Estimated emissions is {round(emissions)} gCO2")
+    print(f"Carbon intensity for {job.starttime} is {intensity} gCO2e/kWh")
+    print(f"Estimated emissions is {round(emissions)} gCO2e")
 
     # Do comparisons if requested
     if compare:
