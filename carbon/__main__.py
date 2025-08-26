@@ -9,6 +9,7 @@ import click
 
 
 @click.command()
+@click.option("-v", "--verbose", is_flag=True, help="Enables verbose output")
 @click.option(
     "--compare",
     is_flag=True,
@@ -21,12 +22,13 @@ import click
     help="Path to the cluster configuration file.",
 )
 @click.argument("job_id", type=str)
-def main(job_id: str, compare: bool, config_path: str) -> None:
+def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
     """Estimate and display the carbon emissions of a compute job.
 
     Args:
         job_id (str): The job identifier to analyze.
         compare (bool): If True, compare emissions to other activities.
+        verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
 
     Returns:
@@ -110,6 +112,21 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
     # Calculate emissions
     emissions = intensity * energy_consumed
 
+    if verbose:
+        print(
+            f"Cluster information:"
+            f"\n    Name: {config.cluster_name}"
+            f"\n    PUE: {config.pue}"
+            f"\nNode information:"
+            f"\n    Name: {node.name}"
+            f"\n    CPU model: {node.cpu_type}"
+            f"\n    GPU model: {node.gpu_type}"
+            f"\n    Memory type: {node.mem_type}"
+            f"\n    CPU power draw (per core): {node.per_core_power_watts} W"
+            f"\n    GPU power draw (per GPU): {node.per_gpu_power_watts} W"
+            f"\n    Memory power draw (per GB): {node.per_gb_power_watts} W"
+        )
+
     gpuhours = job.ngpus * job.runtime
     memhours = job.memory * job.runtime
     print(
@@ -149,6 +166,12 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
             print("----- Food Comparisons -----")
             food_comparer = Food(FOOD_PATH)
             food_comparer.print_comparisons(emissions)
+
+    # if verbose:
+    #    print('Calculation details. Scope 2 only.' \
+    #    'Estimation performed AS IF energy use was London average at time of job start,
+    # although electricity to Imperial cluters is certified 100% renewable'
+    #          '  Show website and doi of green-algorithms.')
 
 
 if __name__ == "__main__":
