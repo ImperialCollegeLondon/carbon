@@ -125,6 +125,16 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
             f"\n    CPU power draw (per core): {node.per_core_power_watts} W"
             f"\n    GPU power draw (per GPU): {node.per_gpu_power_watts} W"
             f"\n    Memory power draw (per GB): {node.per_gb_power_watts} W"
+            f"\nCalculation information:"
+            f"\n    Estimate is for scope 2 emissions only "
+            f"(i.e., indirect emissions due to purchased electricity)."
+            f"\n    Estimate is performed AS IF carbon intensity was London average at "
+            f"job start time, although electricity to Imperial's clusters is certified "
+            f"as 100% renewable (see <docs link> for more information)."
+            f"\n    Estimate methodology follows that of the Green Algorithms project "
+            f"by the Lannelongue group at the University of Cambridge "
+            f"(https://www.green-algorithms.org/, "
+            f"https://doi.org/10.1002/advs.202100707)"
         )
 
     gpuhours = job.ngpus * job.runtime
@@ -166,12 +176,6 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
             print("----- Food Comparisons -----")
             food_comparer = Food(FOOD_PATH)
             food_comparer.print_comparisons(emissions)
-
-    # if verbose:
-    #    print('Calculation details. Scope 2 only.' \
-    #    'Estimation performed AS IF energy use was London average at time of job start,
-    # although electricity to Imperial cluters is certified 100% renewable'
-    #          '  Show website and doi of green-algorithms.')
 
 
 if __name__ == "__main__":
