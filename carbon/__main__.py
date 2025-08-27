@@ -130,9 +130,9 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
             f"(i.e., indirect emissions due to purchased electricity)."
             f"\n    Estimate is performed AS IF carbon intensity was London average at "
             f"job start time, although electricity to Imperial's clusters is certified "
-            f"as 100% renewable (see <docs link> for more information)."
-            f"\n    Estimate methodology follows that of the Green Algorithms project "
-            f"by the Lannelongue group at the University of Cambridge "
+            f"as 100% renewable."
+            f"\n    Estimates use the methodology of the Green Algorithms project by "
+            f"the Lannelongue group at the University of Cambridge "
             f"(https://www.green-algorithms.org/, "
             f"https://doi.org/10.1002/advs.202100707)"
         )
