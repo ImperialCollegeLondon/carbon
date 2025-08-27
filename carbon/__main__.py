@@ -9,6 +9,7 @@ import click
 
 
 @click.command()
+@click.option("-v", "--verbose", is_flag=True, help="Enables verbose output")
 @click.option(
     "--compare",
     is_flag=True,
@@ -21,12 +22,13 @@ import click
     help="Path to the cluster configuration file.",
 )
 @click.argument("job_id", type=str)
-def main(job_id: str, compare: bool, config_path: str) -> None:
+def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
     """Estimate and display the carbon emissions of a compute job.
 
     Args:
         job_id (str): The job identifier to analyze.
         compare (bool): If True, compare emissions to other activities.
+        verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
 
     Returns:
@@ -110,14 +112,41 @@ def main(job_id: str, compare: bool, config_path: str) -> None:
     # Calculate emissions
     emissions = intensity * energy_consumed
 
+    if verbose:
+        print(
+            f"Cluster information:"
+            f"\n    Name: {config.cluster_name}"
+            f"\n    PUE: {config.pue}"
+            f"\nNode information:"
+            f"\n    Name: {node.name}"
+            f"\n    CPU model: {node.cpu_type}"
+            f"\n    GPU model: {node.gpu_type}"
+            f"\n    Memory type: {node.mem_type}"
+            f"\n    CPU power draw (per core): {node.per_core_power_watts} W"
+            f"\n    GPU power draw (per GPU): {node.per_gpu_power_watts} W"
+            f"\n    Memory power draw (per GB): {node.per_gb_power_watts} W"
+            f"\nCalculation information:"
+            f"\n    Estimate is for scope 2 emissions only "
+            f"(i.e., indirect emissions due to purchased electricity)."
+            f"\n    Estimate is performed AS IF carbon intensity was London average at "
+            f"job start time, although electricity to Imperial's clusters is certified "
+            f"as 100% renewable."
+            f"\n    Estimates use the methodology of the Green Algorithms project by "
+            f"the Lannelongue group at the University of Cambridge "
+            f"(https://www.green-algorithms.org/, "
+            f"https://doi.org/10.1002/advs.202100707)"
+        )
+
     gpuhours = job.ngpus * job.runtime
+    memhours = job.memory * job.runtime
     print(
-        f"Energy consumed from {job.cputime:.2f} CPU-hours "
+        f"Estimated energy consumed from {job.cputime:.2f} CPU-hours "
         f"and {gpuhours:.2f} GPU-hours "
+        f"and {memhours:.2f} GB-hours "
         f"is {energy_consumed:.2f} kWh"
     )
-    print(f"Carbon intensity for {job.starttime} is {intensity} gCO2/kWh")
-    print(f"Estimated emissions is {round(emissions)} gCO2")
+    print(f"Carbon intensity for {job.starttime} is {intensity} gCO2e/kWh")
+    print(f"Estimated emissions is {round(emissions)} gCO2e")
 
     # Do comparisons if requested
     if compare:
