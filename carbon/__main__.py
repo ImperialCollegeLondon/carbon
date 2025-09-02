@@ -85,13 +85,16 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
             per_gb_power_watts=config.memory[dummy.mem_type]["per_gb_power_watts"],
         )
     else:
-        if job_id.endswith("[]"):
+        # Remove suffix to make IDs more uniform
+        id = job_id.split(".")[0]
+
+        if id.endswith("[]"):
             print("Error: Handling of array jobs not currently implemented.")
             sys.exit()
 
         # Fetch job data from the cluster's job scheduler
         try:
-            job = Job.fromPBS(job_id)
+            job = Job.fromPBS(id)
         except UnknownJobIDError as e:
             print(f"Error: {e}. Please check the job ID.")
             sys.exit()
