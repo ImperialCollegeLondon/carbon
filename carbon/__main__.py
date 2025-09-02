@@ -42,7 +42,7 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
     from carbon.clusterconfig import ClusterConfig
     from carbon.energy import Energy
     from carbon.intensity import CarbonIntensity
-    from carbon.job import Job, UnknownJobIDError
+    from carbon.job import Job, MalformedJobIDError, UnknownJobIDError
 
     # Get cluster config file path from environment variable
     if not config_path:
@@ -95,7 +95,7 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
         # Fetch job data from the cluster's job scheduler
         try:
             job = Job.fromPBS(id, config.pbs_server)
-        except UnknownJobIDError as e:
+        except (UnknownJobIDError, MalformedJobIDError) as e:
             print(f"Error: {e}. Please check the job ID.")
             sys.exit()
         node = Node.fromPBS(

@@ -11,7 +11,13 @@ from typing import Self
 
 
 class UnknownJobIDError(ValueError):
-    """Raised when qstat returns exit code 153 for unknown job ID."""
+    """Raised for unknown job IDs."""
+
+    pass
+
+
+class MalformedJobIDError(ValueError):
+    """Raised for illegally formed job IDs."""
 
     pass
 
@@ -86,8 +92,15 @@ class Job:
             ValueError: If fetching or parsing job data fails, or if no job data is
                 found.
             UnknownJobIDError: If PBS returns exit code 153 for unknown job ID.
+            MalformedJobIDError: If the job ID contains non-digits or is otherwise not
+                recognised as a job ID.
             NotImplementedError: If the memory format is not supported.
         """
+        if not id.isdigit():
+            raise MalformedJobIDError(
+                f"Malformed job ID: {id}. Should contain only digits"
+            )
+
         cmd = f"qstat -xfF json {id}"
 
         try:
@@ -101,6 +114,8 @@ class Job:
         except subprocess.CalledProcessError as e:
             if e.returncode == 153:
                 raise UnknownJobIDError(f"Unknown job ID: {id}")
+            elif e.returncode == 1 or e.returncode == 170:
+                raise MalformedJobIDError(f"Malformed job ID: {id}")
             else:
                 raise ValueError(f"Failed to fetch job data: {e}")
 
