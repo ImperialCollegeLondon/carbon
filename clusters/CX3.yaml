@@ -1,4 +1,5 @@
 cluster_name: CX3
+pbs_server: pbs-7
 pue: 1.3  # Power Usage Effectiveness
 cpus:
   rome: # AMD EPYCC 7742

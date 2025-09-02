@@ -5,13 +5,20 @@ including parsing job data from a scheduler and converting time formats.
 """
 
 import json
+import re
 import subprocess
 from datetime import datetime
 from typing import Self
 
 
 class UnknownJobIDError(ValueError):
-    """Raised when qstat returns exit code 153 for unknown job ID."""
+    """Raised for unknown job IDs."""
+
+    pass
+
+
+class MalformedJobIDError(ValueError):
+    """Raised for illegally formed job IDs."""
 
     pass
 
@@ -72,11 +79,12 @@ class Job:
         self.node = node
 
     @classmethod
-    def fromPBS(cls, id: str) -> Self:
+    def fromPBS(cls, id: str, server: str) -> Self:
         """Create a Job object by fetching data from PBS based on the job ID.
 
         Args:
             id (str): The job identifier to fetch from the scheduler.
+            server (str): The name of the PBS server.
 
         Returns:
             Job: An instance of the Job class populated with scheduler data.
@@ -85,8 +93,15 @@ class Job:
             ValueError: If fetching or parsing job data fails, or if no job data is
                 found.
             UnknownJobIDError: If PBS returns exit code 153 for unknown job ID.
+            MalformedJobIDError: If the job ID is not formatted correctly.
             NotImplementedError: If the memory format is not supported.
         """
+        # Job ID should either be digits only or digits plus an index in square brackets
+        if not re.fullmatch(r"\d+(\[\d+\])?", id):
+            raise MalformedJobIDError(
+                f"Malformed job ID: {id}. Should contain only digits"
+            )
+
         cmd = f"qstat -xfF json {id}"
 
         try:
@@ -100,6 +115,8 @@ class Job:
         except subprocess.CalledProcessError as e:
             if e.returncode == 153:
                 raise UnknownJobIDError(f"Unknown job ID: {id}")
+            elif e.returncode == 1 or e.returncode == 170:
+                raise MalformedJobIDError(f"Malformed job ID: {id}")
             else:
                 raise ValueError(f"Failed to fetch job data: {e}")
 
@@ -114,7 +131,7 @@ class Job:
         # Here we assume only one job was captured by qstat.
         # If multiple jobs are returned, this will only return the first one.
         internal_id = next(iter(job_data["Jobs"]))
-        node = job_data["Jobs"][f"{id}.pbs-7"]["exec_host"].split("/", 1)[0]
+        node = job_data["Jobs"][f"{id}.{server}"]["exec_host"].split("/", 1)[0]
         resources_used = job_data["Jobs"][internal_id]["resources_used"]
         resources_allocated = job_data["Jobs"][internal_id]["Resource_List"]
 
