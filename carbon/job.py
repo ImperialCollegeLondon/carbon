@@ -5,6 +5,7 @@ including parsing job data from a scheduler and converting time formats.
 """
 
 import json
+import re
 import subprocess
 from datetime import datetime
 from typing import Self
@@ -92,11 +93,11 @@ class Job:
             ValueError: If fetching or parsing job data fails, or if no job data is
                 found.
             UnknownJobIDError: If PBS returns exit code 153 for unknown job ID.
-            MalformedJobIDError: If the job ID contains non-digits or is otherwise not
-                recognised as a job ID.
+            MalformedJobIDError: If the job ID is not formatted correctly.
             NotImplementedError: If the memory format is not supported.
         """
-        if not id.isdigit():
+        # Job ID should either be digits only or digits plus an index in square brackets
+        if not re.fullmatch(r"\d+(\[\d+\])?", id):
             raise MalformedJobIDError(
                 f"Malformed job ID: {id}. Should contain only digits"
             )
