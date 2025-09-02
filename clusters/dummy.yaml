@@ -1,4 +1,5 @@
 cluster_name: DummyCluster
+pbs_server: dummy_server
 pue: 1.3  # Power Usage Effectiveness
 cpus:
   rome:

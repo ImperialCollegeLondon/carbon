@@ -72,11 +72,12 @@ class Job:
         self.node = node
 
     @classmethod
-    def fromPBS(cls, id: str) -> Self:
+    def fromPBS(cls, id: str, server: str) -> Self:
         """Create a Job object by fetching data from PBS based on the job ID.
 
         Args:
             id (str): The job identifier to fetch from the scheduler.
+            server (str): The name of the PBS server.
 
         Returns:
             Job: An instance of the Job class populated with scheduler data.
@@ -114,7 +115,7 @@ class Job:
         # Here we assume only one job was captured by qstat.
         # If multiple jobs are returned, this will only return the first one.
         internal_id = next(iter(job_data["Jobs"]))
-        node = job_data["Jobs"][f"{id}.pbs-7"]["exec_host"].split("/", 1)[0]
+        node = job_data["Jobs"][f"{id}.{server}"]["exec_host"].split("/", 1)[0]
         resources_used = job_data["Jobs"][internal_id]["resources_used"]
         resources_allocated = job_data["Jobs"][internal_id]["Resource_List"]
 

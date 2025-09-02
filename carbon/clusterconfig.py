@@ -36,6 +36,7 @@ class ClusterConfig(BaseModel):
 
     Attributes:
         cluster_name (str): Name of the HPC cluster.
+        pbs_server (str): Name of the PBS server.
         pue (float): Power Usage Effectiveness of the data center.
         cpus (dict): Dictionary of CPU types and their power usage.
         gpus (dict): Dictionary of GPU types and their power usage.
@@ -44,6 +45,7 @@ class ClusterConfig(BaseModel):
     """
 
     cluster_name: str
+    pbs_server: str
     pue: PositiveFloat
     cpus: dict[str, dict[str, float]]
     gpus: dict[str, dict[str, float]]

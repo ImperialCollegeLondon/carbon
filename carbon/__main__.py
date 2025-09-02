@@ -94,7 +94,7 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
 
         # Fetch job data from the cluster's job scheduler
         try:
-            job = Job.fromPBS(id)
+            job = Job.fromPBS(id, config.pbs_server)
         except UnknownJobIDError as e:
             print(f"Error: {e}. Please check the job ID.")
             sys.exit()
