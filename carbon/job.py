@@ -10,6 +10,12 @@ from datetime import datetime
 from typing import Self
 
 
+class UnknownJobIDError(ValueError):
+    """Raised when qstat returns exit code 153 for unknown job ID."""
+
+    pass
+
+
 def hours(time: str) -> float:
     """Convert a time string in HH:MM:SS format to hours.
 
@@ -78,6 +84,7 @@ class Job:
         Raises:
             ValueError: If fetching or parsing job data fails, or if no job data is
                 found.
+            UnknownJobIDError: If PBS returns exit code 153 for unknown job ID.
             NotImplementedError: If the memory format is not supported.
         """
         cmd = f"qstat -xfF json {id}"
@@ -91,7 +98,10 @@ class Job:
                 capture_output=True,
             )
         except subprocess.CalledProcessError as e:
-            raise ValueError(f"Failed to fetch job data: {e}")
+            if e.returncode == 153:
+                raise UnknownJobIDError(f"Unknown job ID: {id}")
+            else:
+                raise ValueError(f"Failed to fetch job data: {e}")
 
         try:
             job_data = json.loads(output.stdout)
