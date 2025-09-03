@@ -140,7 +140,7 @@ class Job:
         state = job_data["Jobs"][internal_id]["job_state"]
         if not (state == "F" or state == "R"):
             raise JobStateError(
-                f"Analysis of jobs with job state {state} is not "
+                f"Analysis of jobs with state {state} is not "
                 "currently supported. Please specify a running (R) or "
                 "finished (F) job."
             )

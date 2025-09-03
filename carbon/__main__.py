@@ -100,7 +100,7 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
             sys.exit()
         except JobStateError as e:
             print(f"Error: {e}")
-            sys.exit
+            sys.exit()
         node = Node.fromPBS(
             job.node,
             {
