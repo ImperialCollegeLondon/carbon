@@ -23,6 +23,12 @@ class MalformedJobIDError(ValueError):
     pass
 
 
+class JobStateError(ValueError):
+    """Raised for jobs in an invalid state."""
+
+    pass
+
+
 def hours(time: str) -> float:
     """Convert a time string in HH:MM:SS format to hours.
 
@@ -131,6 +137,21 @@ class Job:
         # Here we assume only one job was captured by qstat.
         # If multiple jobs are returned, this will only return the first one.
         internal_id = next(iter(job_data["Jobs"]))
+        state = job_data["Jobs"][internal_id]["job_state"]
+        if not (state == "F" or state == "R"):
+            raise JobStateError(
+                f"Analysis of jobs with state {state} is not "
+                "currently supported. Please specify a running (R) or "
+                "finished (F) job."
+            )
+
+        if state == "R":
+            print(
+                f"Job {internal_id} is currently running. Note that energy and "
+                "emissions estimates will be for only the completed portion of the job "
+                "and may not reflect total emissions."
+            )
+
         node = job_data["Jobs"][f"{id}.{server}"]["exec_host"].split("/", 1)[0]
         resources_used = job_data["Jobs"][internal_id]["resources_used"]
         resources_allocated = job_data["Jobs"][internal_id]["Resource_List"]
