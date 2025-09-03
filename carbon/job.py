@@ -85,12 +85,11 @@ class Job:
         self.node = node
 
     @classmethod
-    def fromPBS(cls, id: str, server: str) -> Self:
+    def fromPBS(cls, id: str) -> Self:
         """Create a Job object by fetching data from PBS based on the job ID.
 
         Args:
             id (str): The job identifier to fetch from the scheduler.
-            server (str): The name of the PBS server.
 
         Returns:
             Job: An instance of the Job class populated with scheduler data.
@@ -100,6 +99,7 @@ class Job:
                 found.
             UnknownJobIDError: If PBS returns exit code 153 for unknown job ID.
             MalformedJobIDError: If the job ID is not formatted correctly.
+            JobStateError: If the job is in an invalid state.
             NotImplementedError: If the memory format is not supported.
         """
         # Job ID should either be digits only or digits plus an index in square brackets
@@ -152,7 +152,7 @@ class Job:
                 "and may not reflect total emissions."
             )
 
-        node = job_data["Jobs"][f"{id}.{server}"]["exec_host"].split("/", 1)[0]
+        node = job_data["Jobs"][internal_id]["exec_host"].split("/", 1)[0]
         resources_used = job_data["Jobs"][internal_id]["resources_used"]
         resources_allocated = job_data["Jobs"][internal_id]["Resource_List"]
 
