@@ -148,8 +148,8 @@ class Job:
         if state == "R":
             print(
                 f"Job {internal_id} is currently running. Note that energy and "
-                "emissions estimates will be for the completed portion of the job "
-                "and may not reflect total emissions of the job."
+                "emissions estimates will be for only the completed portion of the job "
+                "and may not reflect total emissions."
             )
 
         node = job_data["Jobs"][f"{id}.{server}"]["exec_host"].split("/", 1)[0]
