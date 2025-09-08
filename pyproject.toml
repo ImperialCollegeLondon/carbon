@@ -19,7 +19,7 @@ numpy = "^2.3.2"
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.17.1"
 pytest = "^8.4.2"
-pytest-cov = "^6.2.1"
+pytest-cov = "^6.3.0"
 pytest-mock = "^3.14.1"
 pre-commit = "^4.3.0"
 ruff = "^0.12.11"
