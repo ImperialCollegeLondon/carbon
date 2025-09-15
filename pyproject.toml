@@ -12,7 +12,7 @@ python = "^3.13"
 types-requests = "^2.32.4.20250913"
 pydantic = "^2.11.9"
 pyaml = "^25.7.0"
-types-pyyaml = "^6.0.12.20250822"
+types-pyyaml = "^6.0.12.20250915"
 click = "^8.2.1"
 numpy = "^2.3.3"
 
