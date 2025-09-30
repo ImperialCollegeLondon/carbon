@@ -34,5 +34,6 @@ plugins:
 
 nav:
   - carbon documentation: index.md
+  - Methodology: methodology.md
   # defer to gen-files + literate-nav
   - Code Reference: reference/
