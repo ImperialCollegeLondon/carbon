@@ -28,4 +28,7 @@ ToDo
 
 ## References
 
-1. ToDo
+1. ToDo: green algorithms
+2. ToDo: memory energy consumption
+3. ToDo: Links to manufacturer TDPs
+4. ToDo: Links to sources for comparisons
