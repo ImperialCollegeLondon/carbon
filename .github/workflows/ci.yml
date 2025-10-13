@@ -19,22 +19,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - name: Install poetry
-        run: pipx install poetry
 
-      - uses: actions/setup-python@v6
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
         with:
+          enable-cache: true
+          activate-enviroment: true
           python-version: ${{matrix.python-version}}
-          cache: poetry
+
       - name: Install dependencies
-        run: poetry install
+        run: uv sync
 
       - name: Run mypy
-        run: poetry run mypy .
+        run: uv run mypy .
 
       - name: Run tests
-        run: poetry run pytest
+        run: uv run pytest
 
       - name: Check that documentation builds cleanly with MkDocs
         if: matrix.os == 'ubuntu-latest'
-        run: poetry run mkdocs build --strict
+        run: uv run mkdocs build --strict
