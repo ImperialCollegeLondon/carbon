@@ -38,4 +38,4 @@ jobs:
 
       - name: Check that documentation builds cleanly with MkDocs
         if: matrix.os == 'ubuntu-latest'
-        run: poetry run mkdocs build --strict
+        run: uv run mkdocs build --strict
