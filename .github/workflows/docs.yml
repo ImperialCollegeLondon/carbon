@@ -31,18 +31,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-      - name: Install Poetry
-        uses: abatilo/actions-poetry@v4.0.0
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
         with:
-          poetry-version: 1.8.3
-      - uses: actions/setup-python@v6
-        with:
+          enable-cache: true
+          activate-enviroment: true
           python-version: '3.13'
-          cache: poetry
       - name: Install dependencies
-        run: poetry install
+        run: uv sync
       - name: Build docs with MkDocs
-        run: poetry run mkdocs build --strict
+        run: uv run mkdocs build --strict
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
