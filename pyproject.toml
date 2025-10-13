@@ -6,32 +6,41 @@ authors = [
     {name = "Jack Coker", email = "j.coker20@imperial.ac.uk"},
     {name = "Imperial College London RSE Team", email = "ict-rse-team@imperial.ac.uk"},
 ]
+requires-python = "~=3.13"
+dependencies = [
+    "types-requests>=2.32.4.20250913,<3",
+    "pydantic>=2.12.0,<3",
+    "pyaml>=25.7.0,<26",
+    "types-pyyaml>=6.0.12.20250915,<7",
+    "click>=8.3.0,<9",
+    "numpy>=2.3.3,<3",
+]
 
-[tool.poetry.dependencies]
-python = "^3.13"
-types-requests = "^2.32.4.20250913"
-pydantic = "^2.12.0"
-pyaml = "^25.7.0"
-types-pyyaml = "^6.0.12.20250915"
-click = "^8.3.0"
-numpy = "^2.3.3"
+[dependency-groups]
+dev = [
+    "mypy>=1.18.2,<2",
+    "pytest>=8.4.2,<9",
+    "pytest-cov>=7.0.0,<8",
+    "pytest-mock>=3.15.1,<4",
+    "pre-commit>=4.3.0,<5",
+    "ruff>=0.14.0,<0.15",
+]
+docs = [
+    "mkdocs>=1.6.1,<2",
+    "mkdocstrings>=0.30.0,<0.31",
+    "mkdocstrings-python>=1.18.2,<2",
+    "mkdocs-material>=9.6.21,<10",
+    "mkdocs-gen-files>=0.5.0,<0.6",
+    "mkdocs-literate-nav>=0.6.2,<0.7",
+    "mkdocs-section-index>=0.3.10,<0.4",
+]
 
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.18.2"
-pytest = "^8.4.2"
-pytest-cov = "^7.0.0"
-pytest-mock = "^3.15.1"
-pre-commit = "^4.3.0"
-ruff = "^0.14.0"
+[tool.uv]
+default-groups = ["dev", "docs"]
 
-[tool.poetry.group.docs.dependencies]
-mkdocs = "^1.6.1"
-mkdocstrings = "^0.30.0"
-mkdocstrings-python = "^1.18.2"
-mkdocs-material = "^9.6.21"
-mkdocs-gen-files = "^0.5.0"
-mkdocs-literate-nav = "^0.6.2"
-mkdocs-section-index = "^0.3.10"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.mypy]
 disallow_any_explicit = true
@@ -72,7 +81,3 @@ pydocstyle.convention = "google"
     "D100", # Missing docstring in public module
     "D104", # Missing docstring in public package
 ]
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
