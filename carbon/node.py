@@ -5,52 +5,34 @@ information about the hardware components.
 """
 
 import subprocess
+from dataclasses import dataclass
 from typing import Self
 
 
+@dataclass
 class Node:
-    """Represents a compute node, including hardware models and power usage.
+    """Represents a compute node, including hardware models and power usage."""
 
-    Attributes:
-        name (str): The node label.
-        cpu_type (str): The CPU model.
-        gpu_type (str | None): The GPU model, or None if GPU not present.
-        mem_type (str): The memory type.
-        per_core_power_watts (float): Power usage per CPU core in watts.
-        per_gpu_power_watts (float | None): Power usage per GPU in watts. Zero if GPU
-            not present.
-        per_gb_power_watts (float): Power usage per GB of memory in watts.
-    """
+    name: str
+    """The node label."""
 
-    def __init__(
-        self,
-        name: str,
-        cpu_type: str,
-        gpu_type: str | None,
-        mem_type: str,
-        per_core_power_watts: float,
-        per_gpu_power_watts: float,
-        per_gb_power_watts: float,
-    ) -> None:
-        """Initialize the Node object.
+    cpu_type: str
+    """The CPU model."""
 
-        Args:
-            name (str): The node label.
-            cpu_type (str): The CPU model.
-            gpu_type (str | None): The GPU model, or None if GPU not present.
-            mem_type (str): The memory type.
-            per_core_power_watts (float): Power usage per CPU core in watts.
-            per_gpu_power_watts (float): Power usage per GPU in watts. Zero if
-                GPU not present.
-            per_gb_power_watts (float): Power usage per GB of memory in watts.
-        """
-        self.name = name
-        self.cpu_type = cpu_type
-        self.gpu_type = gpu_type
-        self.mem_type = mem_type
-        self.per_core_power_watts = per_core_power_watts
-        self.per_gpu_power_watts = per_gpu_power_watts
-        self.per_gb_power_watts = per_gb_power_watts
+    gpu_type: str | None
+    """The GPU model, or None if GPU not present."""
+
+    mem_type: str
+    """The memory type."""
+
+    per_core_power_watts: float
+    """Power usage per CPU core in watts."""
+
+    per_gpu_power_watts: float
+    """Power usage per GPU in watts. Zero if GPU not present."""
+
+    per_gb_power_watts: float
+    """Power usage per GB of memory in watts."""
 
     @classmethod
     def fromPBS(
