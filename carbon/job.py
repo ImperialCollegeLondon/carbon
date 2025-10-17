@@ -7,6 +7,7 @@ including parsing job data from a scheduler and converting time formats.
 import json
 import re
 import subprocess
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Self
 
@@ -42,47 +43,30 @@ def hours(time: str) -> float:
     return float(h) + float(m) / 60.0 + float(s) / 3600.0
 
 
+@dataclass
 class Job:
-    """Represents a compute job, including its resource usage and timing information.
+    """Represents a compute job, including its resource usage and timing information."""
 
-    Attributes:
-        id (str): The job identifier.
-        starttime (datetime): The start time of the job.
-        runtime (float): The total runtime of the job in hours.
-        cputime (float): The total CPU time used by the job in core-hours.
-        ngpus (int): The number of GPUs used by the job.
-        memory (float): The memory allocated to the job in GB.
-        node (str): The node the job was executed on.
-    """
+    id: str
+    """The job identifier."""
 
-    def __init__(
-        self,
-        id: str,
-        starttime: datetime,
-        runtime: float,
-        cputime: float,
-        ngpus: int,
-        memory: float,
-        node: str,
-    ) -> None:
-        """Initialize the Job object.
+    starttime: datetime
+    """The start time of the job."""
 
-        Args:
-            id (str): The job identifier.
-            starttime (datetime): The start time of the job.
-            runtime (float): The total runtime of the job in hours.
-            cputime (float): The total CPU time used by the job in core-hours.
-            ngpus (int): The number of GPUs used by the job.
-            memory (float): The memory allocated to the job in GB.
-            node (str): The node the job was executed on.
-        """
-        self.id = id
-        self.starttime = starttime
-        self.runtime = runtime
-        self.cputime = cputime
-        self.ngpus = ngpus
-        self.memory = memory
-        self.node = node
+    runtime: float
+    """The total runtime of the job in hours."""
+
+    cputime: float
+    """The total CPU time used by the job in core-hours."""
+
+    ngpus: int
+    """The number of GPUs used by the job."""
+
+    memory: float
+    """The memory allocated to the job in GB."""
+
+    node: str
+    """The node the job was executed on."""
 
     @classmethod
     def fromPBS(cls, id: str) -> Self:
