@@ -1,7 +1,8 @@
 """The job module.
 
 This module provides functionality for processing and representing a compute job,
-including parsing job data from a scheduler and converting time formats.
+including parsing job data from a scheduler, converting time formats, and calculating
+the electrical energy consumed by the job.
 """
 
 import json
@@ -10,6 +11,8 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Self
+
+from carbon.node import Node
 
 
 class UnknownJobIDError(ValueError):
@@ -165,4 +168,24 @@ class Job:
             memory=memory,
             ngpus=int(resources_allocated["ngpus"]),
             node=node,
+        )
+
+    def calculate_energy(self, node: Node, pue: float) -> float:
+        """Calculate energy consumption in kilowatt-hours for a compute job.
+
+        Args:
+            node (Node): The compute node the job was executed on.
+            pue (float): Power Usage Effectiveness of the data center.
+
+        Returns:
+            float: The energy consumed in kilowatt-hours.
+        """
+        return (
+            (
+                node.per_core_power_watts * self.cputime
+                + node.per_gpu_power_watts * self.ngpus * self.runtime
+                + node.per_gb_power_watts * self.memory * self.runtime
+            )
+            * pue
+            / 1000.0
         )
