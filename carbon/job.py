@@ -1,7 +1,8 @@
 """The job module.
 
 This module provides functionality for processing and representing a compute job,
-including parsing job data from a scheduler and converting time formats.
+including parsing job data from a scheduler, converting time formats, and calculating
+the electrical energy consumed by the job.
 """
 
 import json
