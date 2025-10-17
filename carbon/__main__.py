@@ -40,7 +40,6 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
     import yaml
 
     from carbon.clusterconfig import ClusterConfig
-    from carbon.energy import Energy
     from carbon.intensity import CarbonIntensity
     from carbon.job import Job, JobStateError, MalformedJobIDError, UnknownJobIDError
 
@@ -111,13 +110,7 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
         )
 
     # Calculate energy consumption
-    energy = Energy(
-        node.per_core_power_watts,
-        node.per_gpu_power_watts if node.per_gpu_power_watts is not None else 0.0,
-        node.per_gb_power_watts,
-        config.pue,
-    )
-    energy_consumed = energy.calculate(job.cputime, job.runtime, job.memory, job.ngpus)
+    energy_consumed = job.calculate_energy(node, config.pue)
 
     # Fetch carbon intensity at job startime time
     carbon_intensity = CarbonIntensity(job.starttime)
