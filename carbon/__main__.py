@@ -163,7 +163,11 @@ def main(
         f"and {memhours:.2f} GB-hours "
         f"is {energy_consumed:.2f} kWh"
     )
-    print(f"Carbon intensity for {job.starttime} is {intensity} gCO2e/kWh")
+    if default_intensity:
+        print(f"Using UK average carbon intensity of {intensity} gCO2e/kWh")
+
+    else:
+        print(f"Carbon intensity for {job.starttime} is {intensity} gCO2e/kWh")
     print(f"Estimated emissions is {round(emissions)} gCO2e")
 
     # Do comparisons if requested
