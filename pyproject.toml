@@ -81,3 +81,6 @@ pydocstyle.convention = "google"
     "D100", # Missing docstring in public module
     "D104", # Missing docstring in public package
 ]
+
+[project.scripts]
+carbon = "carbon.__main__:main"
