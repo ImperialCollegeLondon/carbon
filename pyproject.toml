@@ -82,3 +82,6 @@ pydocstyle.convention = "google"
     "D104", # Missing docstring in public package
 ]
 "carbon/__main__.py" = ["D301"] # To allow escape sequences in docstrings
+
+[project.scripts]
+carbon = "carbon.__main__:main"
