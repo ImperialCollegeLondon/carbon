@@ -21,8 +21,15 @@ import click
     type=click.Path(),
     help="Path to the cluster configuration file.",
 )
+@click.option(
+    "--default_intensity",
+    is_flag=True,
+    help="Get the default carbon intensity - hardcoded to 137 which is the UK average",
+)
 @click.argument("job_id", type=str)
-def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
+def main(
+    job_id: str, compare: bool, verbose: bool, config_path: str, default_intensity: bool
+) -> None:
     """Estimate and display the carbon emissions of a compute job.
 
     Args:
@@ -30,6 +37,7 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
         compare (bool): If True, compare emissions to other activities.
         verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
+        default_intensity (bool): If True, use a default carbon intensity value.
 
     Returns:
         None
@@ -113,8 +121,12 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
     energy_consumed = job.calculate_energy(node, config.pue)
 
     # Fetch carbon intensity at job startime time
-    carbon_intensity = CarbonIntensity(job.starttime)
-    intensity = carbon_intensity.fetch()
+    # ADDED: default intensity option (hardcoded to UK yearly average of 2023-2024)
+    if default_intensity:
+        intensity = 137.0
+    else:
+        carbon_intensity = CarbonIntensity(job.starttime)
+        intensity = carbon_intensity.fetch()
 
     # Calculate emissions
     emissions = intensity * energy_consumed
