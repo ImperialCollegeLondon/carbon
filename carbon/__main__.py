@@ -25,12 +25,13 @@ import click
 def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
     """Estimate and display the carbon emissions of a compute job.
 
+    \b
     Args:
         job_id (str): The job identifier to analyze.
         compare (bool): If True, compare emissions to other activities.
         verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
-
+    \b
     Returns:
         None
     """
