@@ -81,3 +81,4 @@ pydocstyle.convention = "google"
     "D100", # Missing docstring in public module
     "D104", # Missing docstring in public package
 ]
+"carbon/__main__.py" = ["D301"] # To allow escape sequences in docstrings
