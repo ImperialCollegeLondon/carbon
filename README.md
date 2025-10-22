@@ -42,5 +42,5 @@ To get started:
 1. Run the main app:
 
    ```bash
-   python -m carbon <job ID>
+   carbon <job ID>
    ```
