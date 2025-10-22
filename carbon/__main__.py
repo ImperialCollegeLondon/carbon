@@ -24,7 +24,7 @@ import click
 @click.option(
     "--default_intensity",
     is_flag=True,
-    help="Get the default carbon intensity - hardcoded to 137 which is the UK average",
+    help="Use a default value for the carbon intensity (137 gCO2e/kWh)",
 )
 @click.argument("job_id", type=str)
 def main(
@@ -120,8 +120,7 @@ def main(
     # Calculate energy consumption
     energy_consumed = job.calculate_energy(node, config.pue)
 
-    # Fetch carbon intensity at job startime time
-    # ADDED: default intensity option (hardcoded to UK yearly average of 2023-2024)
+    # Fetch carbon intensity at job start time or use a default value
     if default_intensity:
         intensity = 137.0
     else:
