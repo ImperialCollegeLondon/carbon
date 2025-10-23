@@ -21,8 +21,15 @@ import click
     type=click.Path(),
     help="Path to the cluster configuration file.",
 )
+@click.option(
+    "--default_intensity",
+    is_flag=True,
+    help="Use a default value for the carbon intensity (137 gCO2e/kWh)",
+)
 @click.argument("job_id", type=str)
-def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
+def main(
+    job_id: str, compare: bool, verbose: bool, config_path: str, default_intensity: bool
+) -> None:
     """Estimate and display the carbon emissions of a compute job.
 
     \b
@@ -31,6 +38,8 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
         compare (bool): If True, compare emissions to other activities.
         verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
+        default_intensity (bool): If True, use a default carbon intensity value.
+
     \b
     Returns:
         None
@@ -113,9 +122,12 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
     # Calculate energy consumption
     energy_consumed = job.calculate_energy(node, config.pue)
 
-    # Fetch carbon intensity at job startime time
-    carbon_intensity = CarbonIntensity(job.starttime)
-    intensity = carbon_intensity.fetch()
+    # Fetch carbon intensity at job start time or use a default value
+    if default_intensity:
+        intensity = 137.0
+    else:
+        carbon_intensity = CarbonIntensity(job.starttime)
+        intensity = carbon_intensity.fetch()
 
     # Calculate emissions
     emissions = intensity * energy_consumed
@@ -153,7 +165,11 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
         f"and {memhours:.2f} GB-hours "
         f"is {energy_consumed:.2f} kWh"
     )
-    print(f"Carbon intensity for {job.starttime} is {intensity} gCO2e/kWh")
+    if default_intensity:
+        print(f"Using UK average carbon intensity of {intensity} gCO2e/kWh")
+
+    else:
+        print(f"Carbon intensity for {job.starttime} is {intensity} gCO2e/kWh")
     print(f"Estimated emissions is {round(emissions)} gCO2e")
 
     # Do comparisons if requested
