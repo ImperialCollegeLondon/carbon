@@ -7,6 +7,8 @@ food consumption.
 
 import click
 
+from carbon import run
+
 
 @click.command()
 @click.option("-v", "--verbose", is_flag=True, help="Enables verbose output")
@@ -41,8 +43,12 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
     import yaml
 
     from carbon.clusterconfig import ClusterConfig
-    from carbon.intensity import CarbonIntensity
-    from carbon.job import Job, JobStateError, MalformedJobIDError, UnknownJobIDError
+    from carbon.job import (
+        JobStateError,
+        MalformedJobIDError,
+        UnknownJobIDError,
+        UnsupportedJobType,
+    )
 
     # Get cluster config file path from environment variable
     if not config_path:
@@ -58,67 +64,24 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
         config_dict = yaml.safe_load(f)
     config = ClusterConfig(**config_dict)
 
-    # Get the job data and node hardware info
-    from carbon.node import Node
+    # Run the carbon calculation
+    try:
+        result = run(job_id, config)
+    except (UnknownJobIDError, MalformedJobIDError) as e:
+        print(f"Error: {e}. Please check the job ID.")
+        sys.exit(1)
+    except JobStateError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+    except UnsupportedJobType as e:
+        print(f"Error: Handling of {e.job_type} jobs not currently implemented.")
+        sys.exit(1)
 
-    if config.dummy_job:
-        # Use dummy job data for testing
-        dummy = config.dummy_job
-        job = Job(
-            job_id,
-            dummy.start_time,
-            dummy.run_time,
-            dummy.cpu_time,
-            dummy.ngpus,
-            dummy.memory_usage,
-            dummy.node,
-        )
-        node = Node(
-            name=dummy.node,
-            cpu_type=dummy.cpu_type,
-            gpu_type=dummy.gpu_type,
-            mem_type=dummy.mem_type,
-            per_core_power_watts=config.cpus[dummy.cpu_type]["per_core_power_watts"],
-            per_gpu_power_watts=config.gpus[dummy.gpu_type]["per_gpu_power_watts"]
-            if dummy.gpu_type
-            else 0.0,
-            per_gb_power_watts=config.memory[dummy.mem_type]["per_gb_power_watts"],
-        )
-    else:
-        # Remove suffix to make IDs more uniform
-        id = job_id.split(".")[0]
-
-        if id.endswith("[]"):
-            print("Error: Handling of array jobs not currently implemented.")
-            sys.exit()
-
-        # Fetch job data from the cluster's job scheduler
-        try:
-            job = Job.fromPBS(id)
-        except (UnknownJobIDError, MalformedJobIDError) as e:
-            print(f"Error: {e}. Please check the job ID.")
-            sys.exit()
-        except JobStateError as e:
-            print(f"Error: {e}")
-            sys.exit()
-        node = Node.fromPBS(
-            job.node,
-            {
-                "cpus": config.cpus,
-                "gpus": config.gpus,
-                "memory": config.memory,
-            },
-        )
-
-    # Calculate energy consumption
-    energy_consumed = job.calculate_energy(node, config.pue)
-
-    # Fetch carbon intensity at job startime time
-    carbon_intensity = CarbonIntensity(job.starttime)
-    intensity = carbon_intensity.fetch()
-
-    # Calculate emissions
-    emissions = intensity * energy_consumed
+    node = result.node
+    emissions = result.emissions
+    energy_consumed = result.energy_consumed
+    job = result.job
+    intensity = result.carbon_intensity
 
     if verbose:
         print(
