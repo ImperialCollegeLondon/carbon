@@ -126,7 +126,7 @@ def main(
     if default_intensity:
         intensity = 137.0
     else:
-        carbon_intensity = CarbonIntensity(job.starttime)
+        carbon_intensity = CarbonIntensity(job.starttime, region_id=config.region_id)
         intensity = carbon_intensity.fetch()
 
     # Calculate emissions
