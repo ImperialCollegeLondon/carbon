@@ -32,13 +32,18 @@ def main(
 ) -> None:
     """Estimate and display the carbon emissions of a compute job.
 
+    \b
     Args:
         job_id (str): The job identifier to analyze.
         compare (bool): If True, compare emissions to other activities.
         verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
+    <<<<<<< HEAD
         default_intensity (bool): If True, use a default carbon intensity value.
 
+    =======
+    \b
+    >>>>>>> upstream/main
     Returns:
         None
     """
