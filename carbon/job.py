@@ -102,7 +102,7 @@ class Job:
                 cmd,
                 shell=True,
                 check=True,
-                timeout=10,
+                timeout=20,
                 capture_output=True,
             )
         except subprocess.CalledProcessError as e:
