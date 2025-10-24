@@ -22,12 +22,12 @@ class CarbonIntensity:
         _stime_plus (str): End time in ISO format for the API query.
     """
 
-    def __init__(self, time: datetime, region_id: int = 13) -> None:
+    def __init__(self, time: datetime, region_id: int) -> None:
         """Initialize the CarbonIntensity object.
 
         Args:
             time (datetime): The time for which to fetch carbon intensity data.
-            region_id (int): The region ID for the API (default: 13 for London).
+            region_id (int): The region ID for the API.
         """
         self.region_id = region_id
         self._stime = time.strftime("%Y-%m-%dT%H:%MZ")

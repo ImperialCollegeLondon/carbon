@@ -36,7 +36,7 @@ class ClusterConfig(BaseModel):
 
     Attributes:
         cluster_name (str): Name of the HPC cluster.
-        region_id (int): Region ID for carbon intensity API (1-17) (13: London).
+        region_id (int): Region ID for carbon intensity API (1-17).
         pue (float): Power Usage Effectiveness of the data center.
         cpus (dict): Dictionary of CPU types and their power usage.
         gpus (dict): Dictionary of GPU types and their power usage.
