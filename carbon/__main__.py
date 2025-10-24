@@ -23,8 +23,15 @@ from carbon import run
     type=click.Path(),
     help="Path to the cluster configuration file.",
 )
+@click.option(
+    "--default_intensity",
+    is_flag=True,
+    help="Use a default value for the carbon intensity (137 gCO2e/kWh)",
+)
 @click.argument("job_id", type=str)
-def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
+def main(
+    job_id: str, compare: bool, verbose: bool, config_path: str, default_intensity: bool
+) -> None:
     """Estimate and display the carbon emissions of a compute job.
 
     \b
@@ -33,6 +40,8 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
         compare (bool): If True, compare emissions to other activities.
         verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
+        default_intensity (bool): If True, use a default carbon intensity value.
+
     \b
     Returns:
         None
@@ -66,7 +75,7 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
 
     # Run the carbon calculation
     try:
-        result = run(job_id, config)
+        result = run(job_id, config, default_intensity=default_intensity)
     except (UnknownJobIDError, MalformedJobIDError) as e:
         print(f"Error: {e}. Please check the job ID.")
         sys.exit(1)
@@ -116,7 +125,10 @@ def main(job_id: str, compare: bool, verbose: bool, config_path: str) -> None:
         f"and {memhours:.2f} GB-hours "
         f"is {energy_consumed:.2f} kWh"
     )
-    print(f"Carbon intensity for {job.starttime} is {intensity} gCO2e/kWh")
+    if default_intensity:
+        print(f"Using UK average carbon intensity of {intensity} gCO2e/kWh")
+    else:
+        print(f"Carbon intensity for {job.starttime} is {intensity} gCO2e/kWh")
     print(f"Estimated emissions is {round(emissions)} gCO2e")
 
     # Do comparisons if requested

@@ -24,12 +24,15 @@ class RunResult:
     carbon_intensity: float
 
 
-def run(job_id: str, config: ClusterConfig) -> RunResult:
+def run(
+    job_id: str, config: ClusterConfig, default_intensity: bool = False
+) -> RunResult:
     """Estimate the carbon emissions of a compute job.
 
     Args:
         job_id (str): The job identifier to analyze.
         config (ClusterConfig): The cluster configuration.
+        default_intensity (bool): If True, use a default carbon intensity value.
 
     Returns:
         RunResult: The results of the carbon calculation.
@@ -78,9 +81,12 @@ def run(job_id: str, config: ClusterConfig) -> RunResult:
     # Calculate energy consumption
     energy_consumed = job.calculate_energy(node, config.pue)
 
-    # Fetch carbon intensity at job startime time
-    carbon_intensity = CarbonIntensity(job.starttime)
-    intensity = carbon_intensity.fetch()
+    # Fetch carbon intensity at job start time or use a default value
+    if default_intensity:
+        intensity = 137.0  # gCO2e/kWh, UK average over 2023 and 2024
+    else:
+        carbon_intensity = CarbonIntensity(job.starttime)
+        intensity = carbon_intensity.fetch()
 
     # Calculate emissions
     emissions = intensity * energy_consumed
