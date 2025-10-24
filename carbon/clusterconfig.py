@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, PositiveFloat
+from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat
 
 
 class DummyJob(BaseModel):
@@ -36,6 +36,7 @@ class ClusterConfig(BaseModel):
 
     Attributes:
         cluster_name (str): Name of the HPC cluster.
+        region_id (int): Region ID for carbon intensity API (1-17).
         pue (float): Power Usage Effectiveness of the data center.
         cpus (dict): Dictionary of CPU types and their power usage.
         gpus (dict): Dictionary of GPU types and their power usage.
@@ -44,6 +45,7 @@ class ClusterConfig(BaseModel):
     """
 
     cluster_name: str
+    region_id: int = Field(ge=1, le=17)
     pue: PositiveFloat
     cpus: dict[str, dict[str, float]]
     gpus: dict[str, dict[str, float]]
