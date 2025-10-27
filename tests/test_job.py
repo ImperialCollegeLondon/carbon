@@ -1,11 +1,48 @@
 """Unit tests for the Job class and hours conversion."""
 
+import json
 from datetime import datetime
+from unittest.mock import Mock, patch
 
 import numpy as np
 
 from carbon.job import Job, hours
 from carbon.node import Node
+
+
+def _make_PBSjob_json(internal_id: str = "12345") -> bytes:
+    """Construct a minimal qstat JSON payload as bytes."""
+    job_data = {
+        "Jobs": {
+            internal_id: {
+                "job_state": "F",
+                "stime": "Wed Jul 09 12:00:00 2025",
+                # exec_host containing two hosts; code will pick the first before '/'
+                "exec_host": "cx3-3-0/0",
+                "resources_used": {"walltime": "02:00:00", "cput": "04:00:00"},
+                "Resource_List": {"mem": "12gb", "ngpus": "1"},
+            }
+        }
+    }
+    return json.dumps(job_data).encode()
+
+
+def test_fromPBS_parse_job() -> None:
+    """Job.fromPBS parses qstat JSON and returns a Job with expected fields."""
+    mock_proc = Mock()
+    mock_proc.stdout = _make_PBSjob_json("12345")
+
+    with patch("carbon.job.subprocess.run", return_value=mock_proc):
+        job = Job.fromPBS("12345")
+    assert job.id == "12345"
+    assert job.starttime == datetime.strptime(
+        "Wed Jul 09 12:00:00 2025", "%a %b %d %H:%M:%S %Y"
+    )
+    assert job.runtime == 2.0
+    assert job.cputime == 4.0
+    assert job.memory == 12.0
+    assert job.ngpus == 1
+    assert job.node == "cx3-3-0"
 
 
 def test_hours_conversion() -> None:
