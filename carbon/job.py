@@ -139,7 +139,14 @@ class Job:
                 "and may not reflect total emissions."
             )
 
-        node = job_data["Jobs"][internal_id]["exec_host"].split("/", 1)[0]
+        # If the job ran on multiple nodes (e.g., using MPI), just take the first one.
+        # This will be used to get the cpu_type and gpu_type, which should be the same
+        # across the nodes.
+        nodes = [
+            name.split("/", 1)[0]
+            for name in job_data["Jobs"][internal_id]["exec_host"].split("+")
+        ]
+        node = nodes[0]
         resources_used = job_data["Jobs"][internal_id]["resources_used"]
         resources_allocated = job_data["Jobs"][internal_id]["Resource_List"]
 
