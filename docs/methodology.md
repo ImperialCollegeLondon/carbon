@@ -58,7 +58,19 @@ For comparison, CodeCarbon v2 uses 0.375 W/GB. CodeCarbon v3 estimates power dra
 -->
 ## Estimating Emissions
 
-The default carbon intensity of 137 CO2/kWh is an average of the UK's intensity over 2023 (149 CO2/kWh) and 2024 (125 CO2/kWh) (see [Sources](sources.md#uk-average-carbon-intensities)).
+An estimate of the carbon emissions associated with a compute job ($G$) may be calculated by multiplying the estimated energy consumption of the job ($E$), by the carbon intensity of the electrical energy ($I$):
+
+$$ G = E \times I. \tag{2}$$
+
+$I$ is dependent on the mixture of generation technologies used to produce the electrical energy supplied to the HPC cluster, and varies by time and location.
+For clusters based in the UK, we can use the [Carbon Intensity API](https://carbonintensity.org.uk/), run by the [National Energy Systems Operator](https://www.neso.energy/), to fetch $I$ for a given region and time.
+The region ID to use is set in the carbon config file (see [a list of IDs here](https://carbon-intensity.github.io/api-definitions/#region-list)).
+The start time of the job is used for the timestamp for which $I$ is fetched.
+
+The API call can be skipped in favour of a hardcoded default intensity using the flag `--default_intensity`.
+The default carbon intensity (137 CO2/kWh) is based on an average of the UK's intensity over 2023 (149 CO2/kWh) and 2024 (125 CO2/kWh) (see [Sources](sources.md#uk-average-carbon-intensities)).
+
+ToDo: Link to separate doc with details about renewable energy certification (REGOs?).
 
 ## Assumptions & Limitations
 
