@@ -83,7 +83,7 @@ def run(
 
     # Fetch carbon intensity at job start time or use a default value
     if default_intensity:
-        intensity = 137.0  # gCO2e/kWh, UK average over 2023 and 2024
+        intensity = 137.0  # gCO2/kWh, UK average over 2023 and 2024
     else:
         carbon_intensity = CarbonIntensity(job.starttime, region_id=config.region_id)
         intensity = carbon_intensity.fetch()
