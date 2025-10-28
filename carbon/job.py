@@ -33,6 +33,19 @@ class JobStateError(ValueError):
     pass
 
 
+class UnsupportedJobType(ValueError):
+    """Raised for job types that are not supported."""
+
+    def __init__(self, job_type: str) -> None:
+        """Initialize the UnsupportedJobType exception.
+
+        Args:
+            job_type (str): The unsupported job type.
+        """
+        super().__init__(f"Unsupported job type: {job_type}")
+        self.job_type = job_type
+
+
 def hours(time: str) -> float:
     """Convert a time string in HH:MM:SS format to hours.
 
