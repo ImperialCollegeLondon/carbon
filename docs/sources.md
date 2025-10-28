@@ -1,5 +1,10 @@
 # Sources
 
+## UK Average Carbon Intensities
+
+- [2023](https://www.neso.energy/news/britains-electricity-explained-2023-review)
+- [2024](https://www.neso.energy/news/britains-electricity-explained-2024-review)
+
 ## Travel Comparisons
 
 - Emissions: [UK Government - Greenhouse gas reporting: conversion factors 2025](https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025)

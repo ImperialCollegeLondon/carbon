@@ -58,7 +58,7 @@ For comparison, CodeCarbon v2 uses 0.375 W/GB. CodeCarbon v3 estimates power dra
 -->
 ## Estimating Emissions
 
-ToDo
+The default carbon intensity of 137 CO2/kWh is an average of the UK's intensity over 2023 (149 CO2/kWh) and 2024 (125 CO2/kWh) (see [Sources](sources.md#uk-average-carbon-intensities)).
 
 ## Assumptions & Limitations
 
