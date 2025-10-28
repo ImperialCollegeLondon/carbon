@@ -11,7 +11,7 @@ from carbon.intensity import CarbonIntensity
 def test_carbon_intensity_init() -> None:
     """Test CarbonIntensity initialization."""
     dt = datetime(2025, 8, 21, 12, 0, 0)
-    ci = CarbonIntensity(dt)
+    ci = CarbonIntensity(dt, region_id=13)
     assert ci._stime.startswith("2025-08-21T12:00")
     assert ci._stime_plus.startswith("2025-08-21T12:30")
 
@@ -31,5 +31,5 @@ def test_carbon_intensity_fetch(mock_response) -> None:
     """Test CarbonIntensity.fetch() with mocked API response."""
     with patch("requests.get", return_value=mock_response):
         dt = datetime(2025, 8, 21, 12, 0, 0)
-        ci = CarbonIntensity(dt)
+        ci = CarbonIntensity(dt, region_id=13)
         assert ci.fetch() == 120.0
