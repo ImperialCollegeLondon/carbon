@@ -53,9 +53,9 @@ Since the workload managed is not configured to track the utilisation of the GPU
 To estimate the power draw of memory (RAM), we follow the methodology laid out in [\[1\]](#references).
 In that work, the authors describe how the power draw of memory is mainly dependent on the total quantity mobilised, rather than the amount actively in use or the nature of the workload [\[1,4\]](#references).
 Therefore, the amount of memory allocated to a job is used to determine the power draw due to memory, using a per-GB power of 0.3725 GB/W [\[1\]](#references).
-
-MEM: see refs. Based on GA methodology, we use 0.3725 W/GB (this value comes from ...). For comparison, CodeCarbon v2 uses 0.375 W/GB. CodeCarbon v3 estimates power draw of RAM based on size of the compute node, and the number of physical RAM slots it is likely to have, with each slot drawing 5 W. Aside from the dedicated large-memory nodes, the other compute nodes in CX3 have either 500GB or 1TB RAM. Assuming, 128 GB RAM per DIMM, this means the nodes have 4 or 8 DIMMs respectively. Under the codecarbon v3 convention, this would lead to per-node memory power draws of 20 W and 40 W respectively (These values will be higher if less RAM is supplied per DIMM). This may be compared to estimates of 186 W and 372 W that arise from our convention of 0.3725  W/GB. Still, we stick to a per GB estimate, as it is more suitable for shared/non-exculsive node use.
-
+<!--
+For comparison, CodeCarbon v2 uses 0.375 W/GB. CodeCarbon v3 estimates power draw of RAM based on size of the compute node, and the number of physical RAM slots it is likely to have, with each slot drawing 5 W. Aside from the dedicated large-memory nodes, the other compute nodes in CX3 have either 500GB or 1TB RAM. Assuming, 128 GB RAM per DIMM, this means the nodes have 4 or 8 DIMMs respectively. Under the codecarbon v3 convention, this would lead to per-node memory power draws of 20 W and 40 W respectively (These values will be higher if less RAM is supplied per DIMM). This may be compared to estimates of 186 W and 372 W that arise from our convention of 0.3725  W/GB. Still, we stick to a per GB estimate, as it is more suitable for shared/non-exculsive node use.
+-->
 ## Estimating Emissions
 
 ToDo
