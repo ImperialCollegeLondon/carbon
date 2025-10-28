@@ -2,8 +2,8 @@
 
 ## UK Average Carbon Intensities
 
-- [2023](https://www.neso.energy/news/britains-electricity-explained-2023-review)
-- [2024](https://www.neso.energy/news/britains-electricity-explained-2024-review)
+- [National Energy System Operator 2023 Review](https://www.neso.energy/news/britains-electricity-explained-2023-review)
+- [National Energy System Operator 2024 Review](https://www.neso.energy/news/britains-electricity-explained-2024-review)
 
 ## Travel Comparisons
 
