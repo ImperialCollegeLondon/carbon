@@ -40,8 +40,7 @@ class EmissionsComparison(ABC):
         """Calculates the amount of each item that would emit the same emissions.
 
         Args:
-            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
-                against.
+            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
 
         Returns:
             list[tuple[str, float, str]]: List of (item, amount, unit/note) tuples.
@@ -53,8 +52,7 @@ class EmissionsComparison(ABC):
         """Print the equivalent of each item for the given emissions.
 
         Args:
-            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
-                against.
+            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
         """
         pass
 
@@ -66,8 +64,7 @@ class Travel(EmissionsComparison):
         """Calculates the distance via each method that would emit the same emissions.
 
         Args:
-            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
-                against.
+            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
 
         Returns:
             list[tuple[str, float, str]]: List of (method, kilometers, note) tuples.
@@ -85,8 +82,7 @@ class Travel(EmissionsComparison):
         """Print the equivalent travel distances for the given emissions.
 
         Args:
-            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
-                against.
+            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
         """
         equivalents = self.get_equivalents(emissions_gco2)
         print("Equivalent to:")
@@ -101,8 +97,7 @@ class Food(EmissionsComparison):
         """Calculate the number of portions that would emit the same emissions.
 
         Args:
-            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
-                against.
+            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
 
         Returns:
             list[tuple[str, float, str]]: List of (food, portions, portion_name) tuples.
@@ -121,8 +116,7 @@ class Food(EmissionsComparison):
         """Print the equivalent food portions for the given emissions.
 
         Args:
-            emissions_gco2 (float): The emissions in grams of CO2 equivalent to compare
-                against.
+            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
         """
         equivalents = self.get_equivalents(emissions_gco2)
         print("Equivalent to:")

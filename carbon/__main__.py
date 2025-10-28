@@ -26,7 +26,7 @@ from carbon import run
 @click.option(
     "--default_intensity",
     is_flag=True,
-    help="Use a default value for the carbon intensity (137 gCO2e/kWh)",
+    help="Use a default value for the carbon intensity (137 gCO2/kWh)",
 )
 @click.argument("job_id", type=str)
 def main(
@@ -106,7 +106,7 @@ def main(
             f"\n    GPU power draw (per GPU): {node.per_gpu_power_watts} W"
             f"\n    Memory power draw (per GB): {node.per_gb_power_watts} W"
             f"\nCalculation information:"
-            f"\n    Estimate is for scope 2 emissions only "
+            f"\n    Estimate is for scope 2 CO2 emissions only "
             f"(i.e., indirect emissions due to purchased electricity)."
             f"\n    Estimate is performed AS IF carbon intensity was London average at "
             f"job start time, although electricity to Imperial's clusters is certified "
@@ -126,10 +126,10 @@ def main(
         f"is {energy_consumed:.2f} kWh"
     )
     if default_intensity:
-        print(f"Using UK average carbon intensity of {intensity} gCO2e/kWh")
+        print(f"Using UK average carbon intensity of {intensity} gCO2/kWh")
     else:
-        print(f"Carbon intensity for {job.starttime} is {intensity} gCO2e/kWh")
-    print(f"Estimated emissions is {round(emissions)} gCO2e")
+        print(f"Carbon intensity for {job.starttime} is {intensity} gCO2/kWh")
+    print(f"Estimated emissions is {round(emissions)} gCO2")
 
     # Do comparisons if requested
     if compare:
