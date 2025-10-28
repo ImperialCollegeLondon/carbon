@@ -1,11 +1,55 @@
 """Unit tests for the Job class and hours conversion."""
 
+import json
 from datetime import datetime
+from unittest.mock import Mock, patch
 
 import numpy as np
+import pytest
 
 from carbon.job import Job, hours
 from carbon.node import Node
+
+
+def _make_PBSjob_json(internal_id: str = "12345", mpijob: bool = False) -> bytes:
+    """Provide a minimal qstat JSON payload as bytes."""
+    node_name = "cx3-3-0/60" if not mpijob else "cx3-3-1/60+cx3-3-2/60"
+
+    job_data = {
+        "Jobs": {
+            internal_id: {
+                "job_state": "F",
+                "stime": "Wed Jul 09 12:00:00 2025",
+                "exec_host": node_name,
+                "resources_used": {"walltime": "02:00:00", "cput": "04:00:00"},
+                "Resource_List": {"mem": "12gb", "ngpus": "1"},
+            }
+        }
+    }
+    return json.dumps(job_data).encode()
+
+
+@pytest.mark.parametrize(
+    "isMPIjob, first_node_name",
+    [(False, "cx3-3-0"), (True, "cx3-3-1")],
+)
+def test_fromPBS_parse_job(isMPIjob: bool, first_node_name: str) -> None:
+    """Job.fromPBS parses qstat JSON and returns a Job with expected fields."""
+    mock_proc = Mock()
+    mock_proc.stdout = _make_PBSjob_json("12345", isMPIjob)
+
+    with patch("carbon.job.subprocess.run", return_value=mock_proc):
+        job = Job.fromPBS("12345")
+    assert job.id == "12345"
+    assert job.starttime == datetime.strptime(
+        "Wed Jul 09 12:00:00 2025", "%a %b %d %H:%M:%S %Y"
+    )
+    assert job.runtime == 2.0
+    assert job.cputime == 4.0
+    assert job.memory == 12.0
+    assert job.ngpus == 1
+    # For MPI jobs, the first node in the list is taken
+    assert job.node == first_node_name
 
 
 def test_hours_conversion() -> None:

@@ -49,7 +49,7 @@ class Node:
         """
         cmd = f'qmgr -c "list node {node_label}"'
         result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True, check=True
+            cmd, shell=True, timeout=20, capture_output=True, text=True, check=True
         )
         cpu_type: str = ""
         gpu_type: str | None = None

@@ -85,7 +85,7 @@ def run(
     if default_intensity:
         intensity = 137.0  # gCO2e/kWh, UK average over 2023 and 2024
     else:
-        carbon_intensity = CarbonIntensity(job.starttime)
+        carbon_intensity = CarbonIntensity(job.starttime, region_id=config.region_id)
         intensity = carbon_intensity.fetch()
 
     # Calculate emissions
