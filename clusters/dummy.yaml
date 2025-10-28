@@ -1,4 +1,5 @@
 cluster_name: DummyCluster
+region_id: 13  # London region ID for carbon intensity API
 pue: 1.3  # Power Usage Effectiveness
 cpus:
   rome:
