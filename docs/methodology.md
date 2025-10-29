@@ -13,12 +13,12 @@ Currently, this means that only jobs which completed in the past two weeks (or j
 ## Estimating Energy Consumption
 
 The energy consumed by a job is estimated following the methodology behind the [Green Algorithms project](https://www.green-algorithms.org/),
-led by Loïc Lannelongue at the University of Cambridge [\[1\]](#references).
+led by Loïc Lannelongue at the University of Cambridge [(1)](#references).
 This involves estimating the energy consumed using the compute resources assigned/used by the job,
 and information about the power draw of compute components provided by the component manufacturers.
 An additional factor is included in the calculation which accounts for the power usage effectiveness (PUE) of the data centre.
 
-The following equation is used to estimate energy consumption (adapted from [\[1\]](#references)):
+The following equation is used to estimate energy consumption (adapted from [(1)](#references)):
 
 $$ E = t \times (P_c \times u_c + P_g \times n_g + P_m \times n_m) \times \epsilon, \tag{1} $$
 
@@ -31,24 +31,24 @@ This holds also for the CPUs, with cores being able to be distributed among conc
 The TDP of the full CPU component is therefore divided by the number of cores to yield an approximater per-core power draw, $P_c$.
 For the CPU, the workload manager tracks the utilisation of the cores, $u_c$, over the job runtime.
 This is used to scale the energy consumption due to the CPU.
-(Note that PBS reports the variable `cput`, which is the CPU core-time of a job, accounting for utilisation. This variable, equivalent to $t \times u_c$, is used in the code, slightly changing the form of the energy calculation equation compared to (1))
+(Note that PBS reports the variable `cput`, which is the CPU core-time of a job, accounting for utilisation. This variable, equivalent to $t \times u_c$, is used in the code, slightly changing the form of the energy calculation equation).
 
 For the GPU, exclusive use of the component by a job is assumed, so the full TDP is used for estimating power draw, $P_g$.
 Since the workload managed is not configured to track the utilisation of the GPU, we assume 100% utilisation over the runtime of the job.
 
-To estimate the power draw of memory (RAM), we follow the methodology laid out in [\[1\]](#references).
-In that work, the authors describe how the power draw of memory is mainly dependent on the total quantity mobilised, rather than the amount actively in use or the nature of the workload [\[1,2\]](#references).
-Therefore, the amount of memory allocated to a job is used to determine the power draw due to memory, using a per-GB power of 0.3725 GB/W [\[1\]](#references).
+To estimate the power draw of memory (RAM), we follow the methodology laid out in [(1)](#references).
+In that work, the authors describe how the power draw of memory is mainly dependent on the total quantity mobilised, rather than the amount actively in use or the nature of the workload [(1, 2)](#references).
+Therefore, the amount of memory allocated to a job is used to determine the power draw due to memory, using a per-GB power of 0.3725 GB/W [(1)](#references).
 <!--
 For comparison, CodeCarbon v2 uses 0.375 W/GB. CodeCarbon v3 estimates power draw of RAM based on size of the compute node, and the number of physical RAM slots it is likely to have, with each slot drawing 5 W. Aside from the dedicated large-memory nodes, the other compute nodes in CX3 have either 500GB or 1TB RAM. Assuming, 128 GB RAM per DIMM, this means the nodes have 4 or 8 DIMMs respectively. Under the codecarbon v3 convention, this would lead to per-node memory power draws of 20 W and 40 W respectively (These values will be higher if less RAM is supplied per DIMM). This may be compared to estimates of 186 W and 372 W that arise from our convention of 0.3725  W/GB. Still, we stick to a per GB estimate, as it is more suitable for shared/non-exculsive node use.
 -->
 
-The method of estimating energy consumption based on compute resources assigned to the job may be compared to two alternative options [\[3\]](#references),[\[4\]](#references):
+The method of estimating energy consumption based on compute resources assigned to the job may be compared to two alternative options [(3, 4)](#references):
 
 1. Hardware-based measurements (e.g., a physical power meter attached to the compute node or rack)
 1. Software tools (e.g., [Perf](https://perf.wiki.kernel.org/index.php/Main_Page), [PowerStat](https://github.com/ColinIanKing/powerstat), [CodeCarbon](https://codecarbon.io/), which typically make use of Intel's [RAPL](https://greencompute.uk/Measurement/RAPL) interface under the hood.)
 
-Measuring energy consumption directly via hardware tools will generally lead to the most accurate values, with software tools being less accurate but typically more practical [\[3\]](#references).
+Measuring energy consumption directly via hardware tools will generally lead to the most accurate values, with software tools being less accurate but typically more practical [(3)](#references).
 Compared to both these methods, estimating energy consumption based on compute resource usage will tend to be even less accurate.
 However, it has two major practical advantages that motivated the adoption of this approach for _carbon_:
 
