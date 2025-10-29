@@ -73,10 +73,6 @@ The default carbon intensity (137 CO2/kWh) is based on an average of the UK's in
 
 ToDo: Link to separate doc with details about renewable energy certification (REGOs?).
 
-## Assumptions & Limitations
-
-ToDo
-
 ## References
 
 1. [L. Lannelongue, J. Grealey, M. Inouye, __Green Algorithms: Quantifying the Carbon Footprint of Computation__, _Advanced Science_, 02 May 2021](https://doi.org/10.1002/advs.202100707)
