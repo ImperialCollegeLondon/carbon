@@ -71,7 +71,7 @@ The start time of the job is used for the timestamp for which $I$ is fetched.
 
 Note that only CO2 emissions from electricity generation are reported by the API, meaning that other greenhouse gas emissions are neglected, along with other emissions due to indirect effects such as changes in land use.
 
-The API call can be skipped in favour of a hardcoded default intensity using the flag `--default_intensity`.
+The API call can be skipped in favour of a hardcoded default intensity using the flag `--average-intensity`.
 The default carbon intensity (137 CO2/kWh) is based on an average of the UK's intensity over 2023 (149 CO2/kWh) and 2024 (125 CO2/kWh) (see [Sources](sources.md#uk-average-carbon-intensities)).
 
 ToDo: Link to separate doc with details about renewable energy certification (REGOs?).
