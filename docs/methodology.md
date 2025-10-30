@@ -4,7 +4,8 @@ This page describes the methodology used to estimate the energy usage and carbon
 
 ## Gathering Compute Resources
 
-Information about the compute job and executing node is gathered from the workload scheduler (PBS).
+Information about the compute job and executing node is gathered from the workload scheduler.
+For Imperial's CX3 and HX1 systems, this is PBS.
 
 Internally, _carbon_ performs a subprocess call to the PBS command `qstat` and parses the result.
 Therefore, only jobs accessible to `qstat` can be analysed by _carbon_.
@@ -31,7 +32,7 @@ This holds also for the CPUs, with cores being able to be distributed among conc
 The TDP of the full CPU component is therefore divided by the number of cores to yield an approximater per-core power draw, $P_c$.
 For the CPU, the workload manager tracks the utilisation of the cores, $u_c$, over the job runtime.
 This is used to scale the energy consumption due to the CPU.
-(Note that PBS reports the variable `cput`, which is the CPU core-time of a job, accounting for utilisation. This variable, equivalent to $t \times u_c$, is used in the code, slightly changing the form of the energy calculation equation).
+(Note that PBS reports the variable `cput`, which is the CPU core-time of a job, accounting for utilisation. This variable, equivalent to $t \times u_c$, is used in the code, slightly changing the form of the energy calculation equation used in-code from that shown above).
 
 For the GPU, exclusive use of the component by a job is assumed, so the full TDP is used for estimating power draw, $P_g$.
 Since the workload managed is not configured to track the utilisation of the GPU, we assume 100% utilisation over the runtime of the job.
@@ -45,8 +46,8 @@ For comparison, CodeCarbon v2 uses 0.375 W/GB. CodeCarbon v3 estimates power dra
 
 The method of estimating energy consumption based on compute resources assigned to the job may be compared to two alternative options [(3, 4)](#references):
 
-1. Hardware-based measurements (e.g., a physical power meter attached to the compute node or rack)
-1. Software tools (e.g., [Perf](https://perf.wiki.kernel.org/index.php/Main_Page), [PowerStat](https://github.com/ColinIanKing/powerstat), [CodeCarbon](https://codecarbon.io/), which typically make use of Intel's [RAPL](https://greencompute.uk/Measurement/RAPL) interface under the hood.)
+1. Hardware-based measurements (e.g., a physical power meter attached to the compute node or rack).
+1. Software tools (e.g., [Perf](https://perf.wiki.kernel.org/index.php/Main_Page), [PowerStat](https://github.com/ColinIanKing/powerstat), [CodeCarbon](https://codecarbon.io/), which typically make use of Intel's [RAPL](https://greencompute.uk/Measurement/RAPL) interface under the hood).
 
 Measuring energy consumption directly via hardware tools will generally lead to the most accurate values, with software tools being less accurate but typically more practical [(3)](#references).
 Compared to both these methods, estimating energy consumption based on compute resource usage will tend to be even less accurate.
