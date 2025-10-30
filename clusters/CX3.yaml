@@ -2,7 +2,7 @@ cluster_name: CX3
 region_id: 13  # London region ID for carbon intensity API
 pue: 1.3  # Power Usage Effectiveness
 cpus:
-  rome: # AMD EPYCC 7742
+  rome: # AMD EPYC 7742
     per_core_power_watts: 3.52
   icelake: # Intel Icelake Xeon Platinum 8358
     per_core_power_watts: 7.81

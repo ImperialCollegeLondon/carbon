@@ -9,6 +9,8 @@ extra_css:
 
 markdown_extensions:
   - admonition
+  - mdx_math:
+      enable_dollar_delimiter: true
   - pymdownx.snippets:
       check_paths: true
   - toc:
@@ -16,6 +18,7 @@ markdown_extensions:
 
 plugins:
   - search
+  - include-markdown # https://github.com/mondeja/mkdocs-include-markdown-plugin
   - gen-files:
       scripts:
         - docs/gen_ref_nav.py
@@ -34,5 +37,11 @@ plugins:
 
 nav:
   - carbon documentation: index.md
+  - Methodology: methodology.md
+  - Sources: sources.md
   # defer to gen-files + literate-nav
   - Code Reference: reference/
+
+# Render math in mkdocs
+extra_javascript:
+  - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
