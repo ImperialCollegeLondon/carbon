@@ -85,6 +85,56 @@ class Job:
     """The node the job was executed on."""
 
     @classmethod
+    def is_array(cls, job_id: str) -> bool:
+        """Is it a PBS array job?"""
+        return job_id.split(".")[0].endswith("[]")
+
+    @classmethod
+    def split_sub_jobs(cls, job_id: str) -> list[str]:
+        """Split a PBS array job id into the corresponding list of subjob ids."""
+        # Job ID for array should be digits followed by square brackets
+        if not re.fullmatch(r"^\d+\[\](?:..*)?$", job_id):
+            raise MalformedJobIDError(
+                f"Malformed array job ID: {job_id}. Should contain only digits, "
+                "followed by square brackets"
+            )
+
+        cmd = f"qstat -xJt {job_id}"
+
+        try:
+            output = subprocess.run(
+                cmd,
+                shell=True,
+                check=True,
+                timeout=20,
+                capture_output=True,
+                text=True,  # Potentially a 10000 line long str. Could improve?
+            )
+        except subprocess.CalledProcessError as e:
+            if e.returncode == 153:
+                raise UnknownJobIDError(f"Unknown job ID: {job_id}")
+            elif e.returncode == 1 or e.returncode == 170:
+                raise MalformedJobIDError(f"Malformed job ID: {job_id}")
+            else:
+                raise ValueError(f"Failed to fetch job data: {e}")
+
+        sub_jobs = []
+        for row in output.stdout.splitlines()[3:]:
+            items = row.split()
+            label = items[0]
+            status = items[4]
+            # Get all the subjobs which are running, finished, or expired (finished but
+            # other subjobs are still running).
+            if re.fullmatch(r"^\d+\[\d+\](?:..*)?$", label) and status in [
+                "R",
+                "F",
+                "X",
+            ]:
+                sub_jobs.append(label)
+
+        return sub_jobs
+
+    @classmethod
     def fromPBS(cls, id: str) -> Self:
         """Create a Job object by fetching data from PBS based on the job ID.
 
@@ -103,7 +153,7 @@ class Job:
             NotImplementedError: If the memory format is not supported.
         """
         # Job ID should either be digits only or digits plus an index in square brackets
-        if not re.fullmatch(r"\d+(\[\d+\])?", id):
+        if not re.fullmatch(r"^\d+(\[\d+\])?", id):
             raise MalformedJobIDError(
                 f"Malformed job ID: {id}. Should contain only digits"
             )

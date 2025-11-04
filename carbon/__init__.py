@@ -6,7 +6,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 from carbon.clusterconfig import ClusterConfig
 from carbon.intensity import CarbonIntensity
-from carbon.job import Job, UnsupportedJobType
+from carbon.job import Job
 from carbon.node import Node
 
 with suppress(PackageNotFoundError):
@@ -24,7 +24,7 @@ class RunResult:
     carbon_intensity: float
 
 
-def run(
+def run_single(
     job_id: str, config: ClusterConfig, default_intensity: bool = False
 ) -> RunResult:
     """Estimate the carbon emissions of a compute job.
@@ -65,9 +65,6 @@ def run(
         # Remove suffix to make IDs more uniform
         id = job_id.split(".")[0]
 
-        if id.endswith("[]"):
-            raise UnsupportedJobType("array")
-
         # Fetch job data from the cluster's job scheduler
         job = Job.fromPBS(id)
         node = Node.fromPBS(
@@ -97,3 +94,68 @@ def run(
         job=job,
         carbon_intensity=intensity,
     )
+
+
+def run_multiple(
+    job_id_list: list[str], config: ClusterConfig, default_intensity: bool = False
+) -> RunResult:
+    """Estimate the carbon emissions of multiple compute jobs.
+
+    Args:
+        job_id_list (list[str]): The list of job identifiers to analyze.
+        config (ClusterConfig): The cluster configuration.
+        default_intensity (bool): If True, use a default carbon intensity value.
+
+    Returns:
+        RunResult: The results of the carbon calculation.
+    """
+    job_list = []
+    node_list = []
+    total_energy_consumed = 0.0
+    total_emissions = 0.0
+    average_carbon_intensity: float
+
+    for i, job_id in enumerate(job_id_list):
+        single_result = run_single(job_id, config, default_intensity)
+
+        job_list.append(single_result.job)
+        node_list.append(single_result.node)
+        total_energy_consumed += single_result.energy_consumed
+        total_emissions += single_result.emissions
+        if i == 0:
+            average_carbon_intensity = single_result.carbon_intensity
+        else:
+            # Update moving average
+            average_carbon_intensity = average_carbon_intensity * i / (
+                i + 1
+            ) + single_result.carbon_intensity / (i + 1)
+
+    # For now, just return first node and job_id
+    # ToDo: update later
+    return RunResult(
+        node=node_list[0],
+        emissions=total_emissions,
+        energy_consumed=total_energy_consumed,
+        job=job_list[0],
+        carbon_intensity=average_carbon_intensity,
+    )
+
+
+def run(
+    job_id: str, config: ClusterConfig, default_intensity: bool = False
+) -> RunResult:
+    """Select between analysis of a single or array job.
+
+    Args:
+        job_id (str): The job identifier to analyze.
+        config (ClusterConfig): The cluster configuration.
+        default_intensity (bool): If True, use a default carbon intensity value.
+
+    Returns:
+        RunResult: The results of the carbon calculation.
+    """
+    if Job.is_array(job_id):
+        job_id_list = Job.split_sub_jobs(job_id)
+        return run_multiple(job_id_list, config, default_intensity)
+    else:
+        return run_single(job_id, config, default_intensity)
