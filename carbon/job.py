@@ -10,6 +10,7 @@ import re
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from typing import Self
 
 from carbon.node import Node
@@ -44,6 +45,14 @@ class UnsupportedJobType(ValueError):
         """
         super().__init__(f"Unsupported job type: {job_type}")
         self.job_type = job_type
+
+
+class JobState(Enum):
+    """Enumeration of supported job states."""
+
+    FINISHED = "F"
+    RUNNING = "R"
+    EXPIRED = "X"
 
 
 def hours(time: str) -> float:
@@ -84,7 +93,10 @@ class Job:
     node: str
     """The node the job was executed on."""
 
-    isaggregate: bool
+    state: JobState = JobState.FINISHED
+    """The state of the job."""
+
+    isaggregate: bool = False
     """Is this job an aggregate of multiple sub jobs?"""
 
     @classmethod
@@ -199,13 +211,6 @@ class Job:
                 "finished (F), or expired (X) job."
             )
 
-        if state == "R":
-            print(
-                f"Job {internal_id} is currently running. Note that energy and "
-                "emissions estimates will be for only the completed portion of the job "
-                "and may not reflect total emissions."
-            )
-
         # If the job ran on multiple nodes (e.g., using MPI), just take the first one.
         # This will be used to get the cpu_type and gpu_type, which should be the same
         # across the nodes.
@@ -244,6 +249,7 @@ class Job:
             gputime=int(resources_allocated["ngpus"]) * runtime,
             memtime=memory * runtime,
             node=node,
+            state=JobState(state),
             isaggregate=False,
         )
 
