@@ -84,6 +84,9 @@ class Job:
     node: str
     """The node the job was executed on."""
 
+    isaggregate: bool
+    """Is this job an aggregate of multiple sub jobs?"""
+
     @classmethod
     def is_array(cls, job_id: str) -> bool:
         """Is it a PBS array job?"""
@@ -241,6 +244,7 @@ class Job:
             gputime=int(resources_allocated["ngpus"]) * runtime,
             memtime=memory * runtime,
             node=node,
+            isaggregate=False,
         )
 
     def calculate_energy(self, node: Node, pue: float) -> float:

@@ -50,6 +50,7 @@ def run_single(
             gputime=dummy.ngpus * dummy.run_time,
             memtime=dummy.memory_usage * dummy.run_time,
             node=dummy.node,
+            isaggregate=False,
         )
         node = Node(
             name=dummy.node,
@@ -158,6 +159,7 @@ def run_multiple(
         gputime=total_gputime,
         memtime=total_memtime,
         node=agg_node.name,
+        isaggregate=True,
     )
 
     return RunResult(
