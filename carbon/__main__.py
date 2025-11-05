@@ -92,12 +92,15 @@ def main(
     job = result.job
     intensity = result.carbon_intensity
 
+    if job.isaggregate:
+        print("Aggregating estimates over multiple jobs")
+
     if verbose:
         print(
             f"Cluster information:"
             f"\n    Name: {config.cluster_name}"
             f"\n    PUE: {config.pue}"
-            f"\nNode information:"
+            f"\nNode information (first node/job, if multiple nodes/jobs involved):"
             f"\n    Name: {node.name}"
             f"\n    CPU model: {node.cpu_type}"
             f"\n    GPU model: {node.gpu_type}"
@@ -125,6 +128,8 @@ def main(
     )
     if default_intensity:
         print(f"Using UK average carbon intensity of {intensity} gCO2/kWh")
+    elif job.isaggregate:
+        print(f"Average carbon intensity across multiple jobs is {intensity} gCO2/kWh")
     else:
         print(f"Carbon intensity for {job.starttime} is {intensity} gCO2/kWh")
     print(f"Estimated emissions is {round(emissions)} gCO2")
