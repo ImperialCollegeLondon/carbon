@@ -63,11 +63,8 @@ def run_single(
             per_gb_power_watts=config.memory[dummy.mem_type]["per_gb_power_watts"],
         )
     else:
-        # Remove suffix to make IDs more uniform
-        id = job_id.split(".")[0]
-
         # Fetch job data from the cluster's job scheduler
-        job = Job.fromPBS(id)
+        job = Job.fromPBS(job_id)
         node = Node.fromPBS(
             job.node,
             {
