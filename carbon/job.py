@@ -122,10 +122,10 @@ class Job:
         for row in output.stdout.splitlines()[3:]:
             items = row.split()
             label = items[0]
-            status = items[4]
+            state = items[4]
             # Get all the subjobs which are running, finished, or expired (finished but
             # other subjobs are still running).
-            if re.fullmatch(r"^\d+\[\d+\](?:..*)?$", label) and status in [
+            if re.fullmatch(r"^\d+\[\d+\](?:..*)?$", label) and state in [
                 "R",
                 "F",
                 "X",
@@ -188,11 +188,11 @@ class Job:
         # If multiple jobs are returned, this will only return the first one.
         internal_id = next(iter(job_data["Jobs"]))
         state = job_data["Jobs"][internal_id]["job_state"]
-        if not (state == "F" or state == "R"):
+        if state not in ["F", "R", "X"]:
             raise JobStateError(
                 f"Analysis of jobs with state {state} is not "
-                "currently supported. Please specify a running (R) or "
-                "finished (F) job."
+                "currently supported. Please specify a running (R), "
+                "finished (F), or expired (X) job."
             )
 
         if state == "R":
