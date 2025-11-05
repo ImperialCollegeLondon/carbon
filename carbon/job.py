@@ -75,11 +75,11 @@ class Job:
     cputime: float
     """The total CPU time used by the job in core-hours."""
 
-    ngpus: int
-    """The number of GPUs used by the job."""
+    gputime: float
+    """The total GPU time used by the job in component-hours."""
 
-    memory: float
-    """The memory allocated to the job in GB."""
+    memtime: float
+    """The total memory-time allocated to the job in GB-hours."""
 
     node: str
     """The node the job was executed on."""
@@ -229,14 +229,16 @@ class Job:
                 "Expected format is 'Xgb' where X is an integer."
             )
 
+        runtime = hours(resources_used["walltime"])
+
         # Create a Job object with the fetched data
         return cls(
             id=internal_id,
             starttime=starttime,
-            runtime=hours(resources_used["walltime"]),
+            runtime=runtime,
             cputime=hours(resources_used["cput"]),
-            memory=memory,
-            ngpus=int(resources_allocated["ngpus"]),
+            gputime=int(resources_allocated["ngpus"]) * runtime,
+            memtime=memory * runtime,
             node=node,
         )
 
@@ -253,8 +255,8 @@ class Job:
         return (
             (
                 node.per_core_power_watts * self.cputime
-                + node.per_gpu_power_watts * self.ngpus * self.runtime
-                + node.per_gb_power_watts * self.memory * self.runtime
+                + node.per_gpu_power_watts * self.gputime
+                + node.per_gb_power_watts * self.memtime
             )
             * pue
             / 1000.0
