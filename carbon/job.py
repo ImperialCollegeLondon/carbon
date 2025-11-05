@@ -152,10 +152,11 @@ class Job:
             JobStateError: If the job is in an invalid state.
             NotImplementedError: If the memory format is not supported.
         """
-        # Job ID should either be digits only or digits plus an index in square brackets
-        if not re.fullmatch(r"^\d+(\[\d+\])?", id):
+        if not re.fullmatch(r"^\d+(\[\d+\])?(?:..*)?$", id):
             raise MalformedJobIDError(
-                f"Malformed job ID: {id}. Should contain only digits"
+                f"Malformed job ID: {id}. Should be composed of digits, "
+                "optionally followed by an index in square brackets, "
+                "optionally followed by a full stop and the PBS server name."
             )
 
         cmd = f"qstat -xfF json {id}"
