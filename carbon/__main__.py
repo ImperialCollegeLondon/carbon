@@ -117,12 +117,10 @@ def main(
             f"https://doi.org/10.1002/advs.202100707)"
         )
 
-    gpuhours = job.ngpus * job.runtime
-    memhours = job.memory * job.runtime
     print(
         f"Estimated energy consumed from {job.cputime:.2f} CPU-hours "
-        f"and {gpuhours:.2f} GPU-hours "
-        f"and {memhours:.2f} GB-hours "
+        f"and {job.gputime:.2f} GPU-hours "
+        f"and {job.memtime:.2f} GB-hours "
         f"is {energy_consumed:.2f} kWh"
     )
     if default_intensity:

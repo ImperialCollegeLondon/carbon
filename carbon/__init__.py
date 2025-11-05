@@ -42,13 +42,13 @@ def run_single(
         # Use dummy job data for testing
         dummy = config.dummy_job
         job = Job(
-            job_id,
-            dummy.start_time,
-            dummy.run_time,
-            dummy.cpu_time,
-            dummy.ngpus,
-            dummy.memory_usage,
-            dummy.node,
+            id=job_id,
+            starttime=dummy.start_time,
+            runtime=dummy.run_time,
+            cputime=dummy.cpu_time,
+            gputime=dummy.ngpus * dummy.run_time,
+            memtime=dummy.memory_usage * dummy.run_time,
+            node=dummy.node,
         )
         node = Node(
             name=dummy.node,
