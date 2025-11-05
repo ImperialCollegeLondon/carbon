@@ -46,8 +46,8 @@ def test_fromPBS_parse_job(isMPIjob: bool, first_node_name: str) -> None:
     )
     assert job.runtime == 2.0
     assert job.cputime == 4.0
-    assert job.memory == 12.0
-    assert job.ngpus == 1
+    assert job.gputime == 2.0
+    assert job.memtime == 24.0
     # For MPI jobs, the first node in the list is taken
     assert job.node == first_node_name
 
@@ -66,16 +66,16 @@ def test_job_init() -> None:
         starttime=datetime(2025, 8, 21, 10, 0, 0),
         runtime=2.0,
         cputime=4.0,
-        ngpus=2,
-        memory=32.0,
+        gputime=2.0,
+        memtime=64.0,
         node="node01",
     )
     assert job.id == "12345"
     assert job.starttime == datetime(2025, 8, 21, 10, 0, 0)
     assert job.runtime == 2.0
     assert job.cputime == 4.0
-    assert job.ngpus == 2
-    assert job.memory == 32.0
+    assert job.gputime == 2.0
+    assert job.memtime == 64.0
     assert job.node == "node01"
 
 
@@ -86,8 +86,8 @@ def test_energy_calculate() -> None:
         starttime=datetime(2025, 8, 21, 10, 0, 0),
         runtime=2.0,
         cputime=2.0,
-        ngpus=1,
-        memory=16.0,
+        gputime=2.0,
+        memtime=32.0,
         node="node01",
     )
     node = Node(
@@ -100,7 +100,7 @@ def test_energy_calculate() -> None:
         per_gb_power_watts=2.0,
     )
 
-    expected = ((10.0 * 2.0) + (200.0 * 1 * 2.0) + (2.0 * 16.0 * 2.0)) * 1.5 / 1000.0
+    expected = ((10.0 * 2.0) + (200.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
     result = job.calculate_energy(node, 1.5)
 
     assert np.isclose(result, expected, atol=1e-9)
@@ -113,8 +113,8 @@ def test_energy_calculate_no_gpu() -> None:
         starttime=datetime(2025, 8, 21, 10, 0, 0),
         runtime=2.0,
         cputime=2.0,
-        ngpus=0,
-        memory=16.0,
+        gputime=0.0,
+        memtime=32.0,
         node="node01",
     )
     node = Node(
@@ -127,7 +127,7 @@ def test_energy_calculate_no_gpu() -> None:
         per_gb_power_watts=2.0,
     )
 
-    expected = ((10.0 * 2.0) + (2.0 * 16.0 * 2.0)) * 1.5 / 1000.0
+    expected = ((10.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
     result = job.calculate_energy(node, 1.5)
 
     assert np.isclose(result, expected, atol=1e-9)
