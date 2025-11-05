@@ -53,6 +53,7 @@ def main(
 
     from carbon.clusterconfig import ClusterConfig
     from carbon.job import (
+        JobState,
         JobStateError,
         MalformedJobIDError,
         UnknownJobIDError,
@@ -93,7 +94,17 @@ def main(
     intensity = result.carbon_intensity
 
     if job.isaggregate:
-        print("Aggregating estimates over multiple jobs")
+        print("Aggregating estimates over multiple jobs.")
+
+    if job.state == JobState.RUNNING:
+        if job.isaggregate:
+            print("Some jobs are still running.")
+        else:
+            print("Job is still running.")
+        print(
+            "Note that energy and emissions estimates will be for only the completed "
+            "portion of the job(s) and may not reflect total emissions."
+        )
 
     if verbose:
         print(

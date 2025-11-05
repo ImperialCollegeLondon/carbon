@@ -7,7 +7,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 from carbon.clusterconfig import ClusterConfig
 from carbon.intensity import CarbonIntensity
-from carbon.job import Job
+from carbon.job import Job, JobState
 from carbon.node import Node
 
 with suppress(PackageNotFoundError):
@@ -50,7 +50,6 @@ def run_single(
             gputime=dummy.ngpus * dummy.run_time,
             memtime=dummy.memory_usage * dummy.run_time,
             node=dummy.node,
-            isaggregate=False,
         )
         node = Node(
             name=dummy.node,
@@ -121,6 +120,8 @@ def run_multiple(
     total_emissions = 0.0
     average_carbon_intensity: float
 
+    agg_state = JobState.FINISHED
+
     for i, job_id in enumerate(job_id_list):
         single_result = run_single(job_id, config, default_intensity)
 
@@ -144,6 +145,10 @@ def run_multiple(
                 i + 1
             ) + single_result.carbon_intensity / (i + 1)
 
+        # If any subjobs are still running, label the aggregate job as still running
+        if single_result.job.state == JobState.RUNNING:
+            agg_state = JobState.RUNNING
+
     # If all jobs ran on the same node, use that label, otherwise use "Multiple"
     # For now, just report the specs from the first node
     agg_node = node_list[0]
@@ -159,6 +164,7 @@ def run_multiple(
         gputime=total_gputime,
         memtime=total_memtime,
         node=agg_node.name,
+        state=agg_state,
         isaggregate=True,
     )
 
