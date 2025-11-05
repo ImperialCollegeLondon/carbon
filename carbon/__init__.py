@@ -2,6 +2,7 @@
 
 from contextlib import suppress
 from dataclasses import dataclass
+from datetime import datetime
 from importlib.metadata import PackageNotFoundError, version
 
 from carbon.clusterconfig import ClusterConfig
@@ -111,6 +112,13 @@ def run_multiple(
     """
     job_list = []
     node_list = []
+
+    earliest_startime = datetime.max
+    total_runtime = 0.0
+    total_cputime = 0.0
+    total_gputime = 0.0
+    total_memtime = 0.0
+
     total_energy_consumed = 0.0
     total_emissions = 0.0
     average_carbon_intensity: float
@@ -120,6 +128,14 @@ def run_multiple(
 
         job_list.append(single_result.job)
         node_list.append(single_result.node)
+
+        if single_result.job.starttime < earliest_startime:
+            earliest_startime = single_result.job.starttime
+        total_runtime += single_result.job.runtime
+        total_cputime += single_result.job.cputime
+        total_gputime += single_result.job.gputime
+        total_memtime += single_result.job.memtime
+
         total_energy_consumed += single_result.energy_consumed
         total_emissions += single_result.emissions
         if i == 0:
@@ -130,13 +146,28 @@ def run_multiple(
                 i + 1
             ) + single_result.carbon_intensity / (i + 1)
 
-    # For now, just return first node and job_id
-    # ToDo: update later
+    # If all jobs ran on the same node, use that label, otherwise use "Multiple"
+    # For now, just report the specs from the first node
+    agg_node = node_list[0]
+    if not node_list.count(node_list[0]) == len(node_list):
+        agg_node.name = "Multiple"
+
+    # Create an aggregate job which holds resource usage totals
+    agg_job = Job(
+        id="Aggregate",
+        starttime=earliest_startime,
+        runtime=total_runtime,
+        cputime=total_cputime,
+        gputime=total_gputime,
+        memtime=total_memtime,
+        node=agg_node.name,
+    )
+
     return RunResult(
-        node=node_list[0],
+        node=agg_node,
         emissions=total_emissions,
         energy_consumed=total_energy_consumed,
-        job=job_list[0],
+        job=agg_job,
         carbon_intensity=average_carbon_intensity,
     )
 
