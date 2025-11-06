@@ -145,7 +145,8 @@ class Job:
                 "F",
                 "X",
             ]:
-                sub_jobs.append(label)
+                # Add subjobs without server label to improve consistency
+                sub_jobs.append(label.split(".")[0])
 
         return sub_jobs
 
