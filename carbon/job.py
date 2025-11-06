@@ -150,7 +150,7 @@ class Job:
         return sub_jobs
 
     @classmethod
-    def fromPBS(cls, id: str) -> Self:
+    def from_PBS(cls, id: str) -> Self:
         """Create a Job object by fetching data from PBS based on the job ID.
 
         Args:

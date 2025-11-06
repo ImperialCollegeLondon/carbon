@@ -64,8 +64,8 @@ def run_single(
         )
     else:
         # Fetch job data from the cluster's job scheduler
-        job = Job.fromPBS(job_id)
-        node = Node.fromPBS(
+        job = Job.from_PBS(job_id)
+        node = Node.from_PBS(
             job.node,
             {
                 "cpus": config.cpus,

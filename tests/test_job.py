@@ -39,7 +39,7 @@ def test_fromPBS_parse_job(isMPIjob: bool, first_node_name: str) -> None:
     mock_proc.stdout = _make_PBSjob_json("12345", isMPIjob)
 
     with patch("carbon.job.subprocess.run", return_value=mock_proc):
-        job = Job.fromPBS("12345")
+        job = Job.from_PBS("12345")
     assert job.id == "12345"
     assert job.starttime == datetime.strptime(
         "Wed Jul 09 12:00:00 2025", "%a %b %d %H:%M:%S %Y"
