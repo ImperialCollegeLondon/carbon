@@ -2,12 +2,11 @@
 
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import datetime
 from importlib.metadata import PackageNotFoundError, version
 
 from carbon.clusterconfig import ClusterConfig
 from carbon.intensity import CarbonIntensity
-from carbon.job import Job, JobState
+from carbon.job import Job
 from carbon.node import Node
 
 with suppress(PackageNotFoundError):
@@ -96,7 +95,7 @@ def run_single(
 
 def run_multiple(
     job_id_list: list[str], config: ClusterConfig, default_intensity: bool = False
-) -> RunResult:
+) -> list[RunResult]:
     """Estimate the carbon emissions of multiple compute jobs.
 
     Args:
@@ -105,21 +104,9 @@ def run_multiple(
         default_intensity (bool): If True, use a default carbon intensity value.
 
     Returns:
-        RunResult: The results of the carbon calculation.
+        list[RunResult]: The results of the carbon calculations.
     """
-    node_list = []
-    intensity_list = []
-
-    earliest_startime = datetime.max
-    total_runtime = 0.0
-    total_cputime = 0.0
-    total_gputime = 0.0
-    total_memtime = 0.0
-
-    total_energy_consumed = 0.0
-    total_emissions = 0.0
-
-    agg_state = JobState.FINISHED
+    result_list = []
 
     job_list = Job.from_PBS_bulk(job_id_list)
 
@@ -132,18 +119,9 @@ def run_multiple(
                 "memory": config.memory,
             },
         )
-        node_list.append(node)
-
-        if job.starttime < earliest_startime:
-            earliest_startime = job.starttime
-        total_runtime += job.runtime
-        total_cputime += job.cputime
-        total_gputime += job.gputime
-        total_memtime += job.memtime
 
         # Calculate energy consumption
         energy_consumed = job.calculate_energy(node, config.pue)
-        total_energy_consumed += energy_consumed
 
         # Fetch carbon intensity at job start time or use a default value
         if default_intensity:
@@ -151,59 +129,49 @@ def run_multiple(
         else:
             carbon_intensity = CarbonIntensity(job.starttime, config.region_id)
             intensity = carbon_intensity.fetch()
-        intensity_list.append(intensity)
 
         # Calculate emissions
         emissions = intensity * energy_consumed
-        total_emissions += emissions
 
-        # If any subjobs are still running, label the aggregate job as still running
-        if job.state == JobState.RUNNING:
-            agg_state = JobState.RUNNING
+        result_list.append(
+            RunResult(
+                node=node,
+                emissions=emissions,
+                energy_consumed=energy_consumed,
+                job=job,
+                carbon_intensity=intensity,
+            )
+        )
 
-    # If all jobs ran on the same node, use that label, otherwise use "Multiple"
-    # For now, just report the specs from the first node
-    agg_node = node_list[0]
-    if not node_list.count(node_list[0]) == len(node_list):
-        agg_node.name = "Multiple"
-
-    # Create an aggregate job which holds resource usage totals
-    agg_job = Job(
-        id="Aggregate",
-        starttime=earliest_startime,
-        runtime=total_runtime,
-        cputime=total_cputime,
-        gputime=total_gputime,
-        memtime=total_memtime,
-        node=agg_node.name,
-        state=agg_state,
-        isaggregate=True,
-    )
-
-    return RunResult(
-        node=agg_node,
-        emissions=total_emissions,
-        energy_consumed=total_energy_consumed,
-        job=agg_job,
-        carbon_intensity=sum(intensity_list) / len(intensity_list),
-    )
+    return result_list
 
 
 def run(
-    job_id: str, config: ClusterConfig, default_intensity: bool = False
-) -> RunResult:
-    """Select between analysis of a single or array job.
+    job_ids: tuple[str, ...], config: ClusterConfig, default_intensity: bool = False
+) -> list[RunResult]:
+    """Select between analysis of a single, multiple, or array job.
 
     Args:
-        job_id (str): The job identifier to analyze.
+        job_ids (str): The job identifier(s) to analyze.
         config (ClusterConfig): The cluster configuration.
         default_intensity (bool): If True, use a default carbon intensity value.
 
     Returns:
-        RunResult: The results of the carbon calculation.
+        list[RunResult]: The result(s) of the carbon calculation(s).
     """
-    if Job.is_array(job_id):
-        job_id_list = Job.split_sub_jobs(job_id)
-        return run_multiple(job_id_list, config, default_intensity)
+    if len(job_ids) == 1:
+        if Job.is_array(job_ids[0]):
+            job_id_list = Job.split_sub_jobs(job_ids[0])
+            return run_multiple(job_id_list, config, default_intensity)
+        else:
+            return [run_single(job_ids[0], config, default_intensity)]
     else:
-        return run_single(job_id, config, default_intensity)
+        arrays = [id for id in job_ids if Job.is_array(id)]
+        if arrays:
+            raise NotImplementedError(
+                "Detected multiple array jobs: " + " ".join(arrays) + ". "
+                "Analysis of multiple array jobs not implemented. "
+                "Please provide a single array job, or a list of jobs/subjobs."
+            )
+
+        return run_multiple(list(job_ids), config, default_intensity)
