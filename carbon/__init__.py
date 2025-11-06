@@ -80,7 +80,7 @@ def run_single(
     if default_intensity:
         intensity = 137.0  # gCO2/kWh, UK average over 2023 and 2024
     else:
-        carbon_intensity = CarbonIntensity(job.starttime, region_id=config.region_id)
+        carbon_intensity = CarbonIntensity(job.starttime, config.region_id)
         intensity = carbon_intensity.fetch()
 
     # Calculate emissions
@@ -107,8 +107,8 @@ def run_multiple(
     Returns:
         RunResult: The results of the carbon calculation.
     """
-    job_list = []
     node_list = []
+    intensity_list = []
 
     earliest_startime = datetime.max
     total_runtime = 0.0
@@ -118,35 +118,47 @@ def run_multiple(
 
     total_energy_consumed = 0.0
     total_emissions = 0.0
-    average_carbon_intensity: float
 
     agg_state = JobState.FINISHED
 
-    for i, job_id in enumerate(job_id_list):
-        single_result = run_single(job_id, config, default_intensity)
+    job_list = Job.from_PBS_bulk(job_id_list)
 
-        job_list.append(single_result.job)
-        node_list.append(single_result.node)
+    for job in job_list:
+        node = Node.from_PBS(
+            job.node,
+            {
+                "cpus": config.cpus,
+                "gpus": config.gpus,
+                "memory": config.memory,
+            },
+        )
+        node_list.append(node)
 
-        if single_result.job.starttime < earliest_startime:
-            earliest_startime = single_result.job.starttime
-        total_runtime += single_result.job.runtime
-        total_cputime += single_result.job.cputime
-        total_gputime += single_result.job.gputime
-        total_memtime += single_result.job.memtime
+        if job.starttime < earliest_startime:
+            earliest_startime = job.starttime
+        total_runtime += job.runtime
+        total_cputime += job.cputime
+        total_gputime += job.gputime
+        total_memtime += job.memtime
 
-        total_energy_consumed += single_result.energy_consumed
-        total_emissions += single_result.emissions
-        if i == 0:
-            average_carbon_intensity = single_result.carbon_intensity
+        # Calculate energy consumption
+        energy_consumed = job.calculate_energy(node, config.pue)
+        total_energy_consumed += energy_consumed
+
+        # Fetch carbon intensity at job start time or use a default value
+        if default_intensity:
+            intensity = 137.0  # gCO2/kWh, UK average over 2023 and 2024
         else:
-            # Update moving average
-            average_carbon_intensity = average_carbon_intensity * i / (
-                i + 1
-            ) + single_result.carbon_intensity / (i + 1)
+            carbon_intensity = CarbonIntensity(job.starttime, config.region_id)
+            intensity = carbon_intensity.fetch()
+        intensity_list.append(intensity)
+
+        # Calculate emissions
+        emissions = intensity * energy_consumed
+        total_emissions += emissions
 
         # If any subjobs are still running, label the aggregate job as still running
-        if single_result.job.state == JobState.RUNNING:
+        if job.state == JobState.RUNNING:
             agg_state = JobState.RUNNING
 
     # If all jobs ran on the same node, use that label, otherwise use "Multiple"
@@ -173,7 +185,7 @@ def run_multiple(
         emissions=total_emissions,
         energy_consumed=total_energy_consumed,
         job=agg_job,
-        carbon_intensity=average_carbon_intensity,
+        carbon_intensity=sum(intensity_list) / len(intensity_list),
     )
 
 
