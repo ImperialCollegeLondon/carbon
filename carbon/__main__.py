@@ -209,7 +209,6 @@ def output_result(
             f"\n    Name: {config.cluster_name}"
             f"\n    PUE: {config.pue}"
             f"\nNode information (first node/job, if multiple nodes/jobs involved):"
-            f"\n    Name: {node.name}"
             f"\n    CPU model: {node.cpu_type}"
             f"\n    GPU model: {node.gpu_type}"
             f"\n    Memory type: {node.mem_type}"
@@ -231,6 +230,7 @@ def output_result(
     if isaggregate:
         print("Aggregating estimates over multiple jobs.")
 
+    print(f"Job run on node: {node.name}")
     print(
         f"Estimated energy consumed from {job.cputime:.2f} CPU-hours "
         f"and {job.gputime:.2f} GPU-hours "
