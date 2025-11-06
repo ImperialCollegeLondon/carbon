@@ -5,9 +5,12 @@ compute job, optionally comparing the emissions to other activities such as trav
 food consumption.
 """
 
+from pathlib import Path
+
 import click
 
-from carbon import run
+from carbon import RunResult, run
+from carbon.clusterconfig import ClusterConfig
 
 
 @click.command()
@@ -28,31 +31,44 @@ from carbon import run
     is_flag=True,
     help="Use a default value for the carbon intensity (137 gCO2/kWh)",
 )
-@click.argument("job_id", type=str)
+@click.option(
+    "--split_jobs",
+    is_flag=True,
+    help="Show separate results for each job when multiple IDs are input. "
+    " Without this flag, only the aggregate of the jobs is displayed.",
+)
+@click.argument("job_ids", type=str, nargs=-1)
 def main(
-    job_id: str, compare: bool, verbose: bool, config_path: str, default_intensity: bool
+    job_ids: tuple[str, ...],
+    compare: bool,
+    verbose: bool,
+    config_path: str,
+    default_intensity: bool,
+    split_jobs: bool,
 ) -> None:
     """Estimate and display the carbon emissions of a compute job.
 
     \b
     Args:
-        job_id (str): The job identifier to analyze.
+        job_ids (tuple[str]): Identifier(s) of the job(s) to analyze.
         compare (bool): If True, compare emissions to other activities.
         verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
         default_intensity (bool): If True, use a default carbon intensity value.
+        split_jobs (bool): If True, show separate results for each job when multiple IDs
+            provided.
 
     \b
     Returns:
         None
     """
     import sys
-    from pathlib import Path
+    from datetime import datetime
 
     import yaml
 
-    from carbon.clusterconfig import ClusterConfig
     from carbon.job import (
+        Job,
         JobState,
         JobStateError,
         MalformedJobIDError,
@@ -76,7 +92,7 @@ def main(
 
     # Run the carbon calculation
     try:
-        result = run(job_id, config, default_intensity=default_intensity)
+        results = run(job_ids, config, default_intensity=default_intensity)
     except (UnknownJobIDError, MalformedJobIDError) as e:
         print(f"Error: {e}. Please check the job ID.")
         sys.exit(1)
@@ -87,24 +103,106 @@ def main(
         print(f"Error: Handling of {e.job_type} jobs not currently implemented.")
         sys.exit(1)
 
+    # Warn if any jobs are still running
+    for result in results:
+        if result.job.state == JobState.RUNNING:
+            if len(results) == 1:
+                print("Job is still running. ", end="")
+            else:
+                print("Some jobs are still running. ", end="")
+            print(
+                "Note that energy and emissions estimates will be for only the "
+                "completed portion of the job and may not reflect total emissions."
+            )
+            break
+
+    # Print output
+    if len(results) == 1:
+        output_result(results[0], compare, verbose, default_intensity, config)
+    elif split_jobs:
+        for result in results:
+            print(f"Job ID: {result.job.id}")
+            output_result(result, compare, verbose, default_intensity, config)
+            print("")
+    else:
+        # Aggregate estimates over multiple jobs
+        intensity_list = []
+        earliest_startime = datetime.max
+        total_runtime = 0.0
+        total_cputime = 0.0
+        total_gputime = 0.0
+        total_memtime = 0.0
+
+        total_energy_consumed = 0.0
+        total_emissions = 0.0
+
+        agg_state = JobState.FINISHED
+
+        for result in results:
+            job = result.job
+            if job.starttime < earliest_startime:
+                earliest_startime = job.starttime
+            total_runtime += job.runtime
+            total_cputime += job.cputime
+            total_gputime += job.gputime
+            total_memtime += job.memtime
+
+            total_energy_consumed += result.energy_consumed
+            total_emissions += result.emissions
+            intensity_list.append(result.carbon_intensity)
+
+            # If any jobs are still running, label the aggregate job as still running
+            if job.state == JobState.RUNNING:
+                agg_state = JobState.RUNNING
+
+        agg_job = Job(
+            id="Aggregate",
+            starttime=earliest_startime,
+            runtime=total_runtime,
+            cputime=total_cputime,
+            gputime=total_gputime,
+            memtime=total_memtime,
+            node="Multiple",
+            state=agg_state,
+            isaggregate=True,
+        )
+        agg_result = RunResult(
+            node=results[0].node,  # Just use first node for now
+            emissions=total_emissions,
+            energy_consumed=total_energy_consumed,
+            job=agg_job,
+            carbon_intensity=sum(intensity_list) / len(intensity_list),
+        )
+        output_result(agg_result, compare, verbose, default_intensity, config, True)
+
+
+def output_result(
+    result: RunResult,
+    compare: bool,
+    verbose: bool,
+    default_intensity: bool,
+    config: ClusterConfig,
+    isaggregate: bool = False,
+) -> None:
+    """Output a carbon estimation result to the user.
+
+    Args:
+        result (RunResult): The result to display
+        compare (bool): If True, compare emissions to other activities.
+        verbose (bool): If True, provide verbose output.
+        default_intensity (bool): If True, indicate that default carbon intensity value
+            was used.
+        config (ClusterConfig): The cluster configuration.
+        isaggregate (bool): If True, show average carbon intensity.
+
+    Returns:
+        None
+    """
     node = result.node
     emissions = result.emissions
     energy_consumed = result.energy_consumed
     job = result.job
     intensity = result.carbon_intensity
-
-    if job.isaggregate:
-        print("Aggregating estimates over multiple jobs.")
-
-    if job.state == JobState.RUNNING:
-        if job.isaggregate:
-            print("Some jobs are still running.")
-        else:
-            print("Job is still running.")
-        print(
-            "Note that energy and emissions estimates will be for only the completed "
-            "portion of the job(s) and may not reflect total emissions."
-        )
 
     if verbose:
         print(
@@ -131,6 +229,9 @@ def main(
             f"https://doi.org/10.1002/advs.202100707)"
         )
 
+    if isaggregate:
+        print("Aggregating estimates over multiple jobs.")
+
     print(
         f"Estimated energy consumed from {job.cputime:.2f} CPU-hours "
         f"and {job.gputime:.2f} GPU-hours "
@@ -139,7 +240,7 @@ def main(
     )
     if default_intensity:
         print(f"Using UK average carbon intensity of {intensity} gCO2/kWh")
-    elif job.isaggregate:
+    elif isaggregate:
         print(f"Average carbon intensity across multiple jobs is {intensity} gCO2/kWh")
     else:
         print(f"Carbon intensity for {job.starttime} is {intensity} gCO2/kWh")
