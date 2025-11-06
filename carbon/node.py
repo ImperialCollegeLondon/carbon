@@ -35,7 +35,7 @@ class Node:
     """Power usage per GB of memory in watts."""
 
     @classmethod
-    def fromPBS(
+    def from_PBS(
         cls, node_label: str, component_powers: dict[str, dict[str, dict[str, float]]]
     ) -> Self:
         """Create a Node object by fetching info from PBS and cluster config.
