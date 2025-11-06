@@ -164,7 +164,6 @@ def main(
             memtime=total_memtime,
             node="Multiple",
             state=agg_state,
-            isaggregate=True,
         )
         agg_result = RunResult(
             node=results[0].node,  # Just use first node for now

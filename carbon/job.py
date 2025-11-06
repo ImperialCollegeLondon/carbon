@@ -96,9 +96,6 @@ class Job:
     state: JobState = JobState.FINISHED
     """The state of the job."""
 
-    isaggregate: bool = False
-    """Is this job an aggregate of multiple sub jobs?"""
-
     @classmethod
     def is_array(cls, job_id: str) -> bool:
         """Is it a PBS array job?"""
@@ -262,7 +259,6 @@ class Job:
                     memtime=memory * runtime,
                     node=node,
                     state=JobState(state),
-                    isaggregate=False,
                 )
             )
         return job_list
