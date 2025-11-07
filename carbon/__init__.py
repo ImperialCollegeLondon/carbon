@@ -25,7 +25,7 @@ class RunResult:
 
 
 def run_single(
-    job_id: str, config: ClusterConfig, default_intensity: bool = False
+    job_id: str, config: ClusterConfig, default_intensity: bool, ignore_failed: bool
 ) -> RunResult:
     """Estimate the carbon emissions of a compute job.
 
@@ -33,10 +33,17 @@ def run_single(
         job_id (str): The job identifier to analyze.
         config (ClusterConfig): The cluster configuration.
         default_intensity (bool): If True, use a default carbon intensity value.
+        ignore_failed (bool): If True, don't crash out when job cannot be parsed or
+            analysed.
 
     Returns:
         RunResult: The results of the carbon calculation.
     """
+    if ignore_failed:
+        raise NotImplementedError(
+            "ignore_failed not compatible with analysis of single jobs."
+        )
+
     # Get the job data and node hardware info
     if config.dummy_job:
         # Use dummy job data for testing
@@ -94,7 +101,10 @@ def run_single(
 
 
 def run_multiple(
-    job_id_list: list[str], config: ClusterConfig, default_intensity: bool = False
+    job_id_list: list[str],
+    config: ClusterConfig,
+    default_intensity: bool,
+    ignore_failed: bool,
 ) -> list[RunResult]:
     """Estimate the carbon emissions of multiple compute jobs.
 
@@ -102,13 +112,15 @@ def run_multiple(
         job_id_list (list[str]): The list of job identifiers to analyze.
         config (ClusterConfig): The cluster configuration.
         default_intensity (bool): If True, use a default carbon intensity value.
+        ignore_failed (bool): If True, don't crash out when jobs cannot be parsed or
+            analysed and don't add respective results to the results list.
 
     Returns:
         list[RunResult]: The results of the carbon calculations.
     """
     result_list = []
 
-    job_list = Job.from_PBS_bulk(job_id_list)
+    job_list = Job.from_PBS_bulk(job_id_list, ignore_failed)
 
     for job in job_list:
         node = Node.from_PBS(
@@ -147,7 +159,10 @@ def run_multiple(
 
 
 def run(
-    job_ids: tuple[str, ...], config: ClusterConfig, default_intensity: bool = False
+    job_ids: tuple[str, ...],
+    config: ClusterConfig,
+    default_intensity: bool,
+    ignore_failed: bool,
 ) -> list[RunResult]:
     """Select between analysis of a single, multiple, or array job.
 
@@ -155,6 +170,8 @@ def run(
         job_ids (str): The job identifier(s) to analyze.
         config (ClusterConfig): The cluster configuration.
         default_intensity (bool): If True, use a default carbon intensity value.
+        ignore_failed (bool): If True, don't crash out when jobs cannot be parsed or
+            analysed and don't add respective results to the results list.
 
     Returns:
         list[RunResult]: The result(s) of the carbon calculation(s).
@@ -162,9 +179,9 @@ def run(
     if len(job_ids) == 1:
         if Job.is_array(job_ids[0]):
             job_id_list = Job.split_sub_jobs(job_ids[0])
-            return run_multiple(job_id_list, config, default_intensity)
+            return run_multiple(job_id_list, config, default_intensity, ignore_failed)
         else:
-            return [run_single(job_ids[0], config, default_intensity)]
+            return [run_single(job_ids[0], config, default_intensity, ignore_failed)]
     else:
         arrays = [id for id in job_ids if Job.is_array(id)]
         if arrays:
@@ -174,4 +191,4 @@ def run(
                 "Please provide a single array job, or a list of jobs/subjobs."
             )
 
-        return run_multiple(list(job_ids), config, default_intensity)
+        return run_multiple(list(job_ids), config, default_intensity, ignore_failed)

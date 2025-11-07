@@ -35,7 +35,13 @@ from carbon.clusterconfig import ClusterConfig
     "--split_jobs",
     is_flag=True,
     help="Show separate results for each job when multiple IDs are input. "
-    " Without this flag, only the aggregate of the jobs is displayed.",
+    "Without this flag, only the aggregate of the jobs is displayed.",
+)
+@click.option(
+    "--ignore_failed",
+    is_flag=True,
+    help="Quietly ignore jobs that couldn't be parsed or analysed correctly. "
+    "Useful when analysing large batches of jobs.",
 )
 @click.argument("job_ids", type=str, nargs=-1)
 def main(
@@ -45,6 +51,7 @@ def main(
     config_path: str,
     default_intensity: bool,
     split_jobs: bool,
+    ignore_failed: bool,
 ) -> None:
     """Estimate and display the carbon emissions of a compute job.
 
@@ -57,6 +64,8 @@ def main(
         default_intensity (bool): If True, use a default carbon intensity value.
         split_jobs (bool): If True, show separate results for each job when multiple IDs
             provided.
+        ignore_failed (bool): If True, quietly ignore jobs that can't be parsed or
+            analysed correctly, rather than crashing out.
 
     \b
     Returns:
@@ -92,7 +101,7 @@ def main(
 
     # Run the carbon calculation
     try:
-        results = run(job_ids, config, default_intensity=default_intensity)
+        results = run(job_ids, config, default_intensity, ignore_failed)
     except (UnknownJobIDError, MalformedJobIDError) as e:
         print(f"Error: {e}. Please check the job ID.")
         sys.exit(1)
@@ -117,7 +126,9 @@ def main(
             break
 
     # Print output
-    if len(results) == 1:
+    if not results and not ignore_failed:
+        print("No results to show. Issue in parsing or analysing job(s).")
+    elif len(results) == 1:
         output_result(results[0], compare, verbose, default_intensity, config)
     elif split_jobs:
         for result in results:
