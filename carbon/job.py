@@ -188,8 +188,8 @@ class Job:
 
         cmd = "qstat -xfF json " + " ".join(ids)
 
-        # Placeholder: if subprocess raises and a partial output in
-        # e.stdout (when ignore_failed=True), we'll store it here and continue.
+        # Placeholder for storing partial stdout if subprocess raises and ignore_failed
+        # is True.
         e_stdout: bytes | None = None
 
         try:
@@ -229,8 +229,8 @@ class Job:
                 raise ValueError(f"Failed to fetch job data: {e}")
 
         try:
-            if not e_stdout:
-                job_data = json.loads(output.stdout)
+            stdout = output.stdout if not e_stdout else e_stdout
+            job_data = json.loads(stdout)
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse job data: {e}")
 
