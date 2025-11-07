@@ -128,13 +128,13 @@ def main(
     # Print output
     if not results and not ignore_failed:
         print("No results to show. Issue in parsing or analysing job(s).")
-    elif len(results) == 1:
-        output_result(results[0], compare, verbose, default_intensity, config)
     elif split_jobs:
         for result in results:
             print(f"Job ID: {result.job.id}")
             output_result(result, compare, verbose, default_intensity, config)
             print("")
+    elif len(results) == 1:
+        output_result(results[0], compare, verbose, default_intensity, config)
     else:
         # Aggregate estimates over multiple jobs
         intensity_list = []
