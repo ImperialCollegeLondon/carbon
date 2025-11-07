@@ -242,6 +242,7 @@ def output_result(
         print("Aggregating estimates over multiple jobs.")
 
     print(f"Job run on node: {node.name}")
+    print(f"Job started at: {job.starttime}")
     print(
         f"Estimated energy consumed from {job.cputime:.2f} CPU-hours "
         f"and {job.gputime:.2f} GPU-hours "
