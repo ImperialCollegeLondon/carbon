@@ -105,7 +105,7 @@ def run_multiple(
     config: ClusterConfig,
     default_intensity: bool,
     ignore_failed: bool,
-) -> list[RunResult]:
+) -> tuple[list[RunResult], int]:
     """Estimate the carbon emissions of multiple compute jobs.
 
     Args:
@@ -116,7 +116,8 @@ def run_multiple(
             analysed and don't add respective results to the results list.
 
     Returns:
-        list[RunResult]: The results of the carbon calculations.
+        tuple[list[RunResult], int]: The results of the carbon calculations, plus an
+            integer count of failed analyses.
     """
     result_list = []
 
@@ -155,7 +156,7 @@ def run_multiple(
             )
         )
 
-    return result_list
+    return result_list, len(job_id_list) - len(result_list)
 
 
 def run(
@@ -163,7 +164,7 @@ def run(
     config: ClusterConfig,
     default_intensity: bool,
     ignore_failed: bool,
-) -> list[RunResult]:
+) -> tuple[list[RunResult], int]:
     """Select between analysis of a single, multiple, or array job.
 
     Args:
@@ -174,14 +175,18 @@ def run(
             analysed and don't add respective results to the results list.
 
     Returns:
-        list[RunResult]: The result(s) of the carbon calculation(s).
+        tuple[list[RunResult], int]: The results of the carbon calculations, plus an
+            integer count of failed analyses.
     """
     if len(job_ids) == 1:
         if Job.is_array(job_ids[0]):
             job_id_list = Job.split_sub_jobs(job_ids[0])
             return run_multiple(job_id_list, config, default_intensity, ignore_failed)
         else:
-            return [run_single(job_ids[0], config, default_intensity, ignore_failed)]
+            return (
+                [run_single(job_ids[0], config, default_intensity, ignore_failed)],
+                0,
+            )
     else:
         arrays = [id for id in job_ids if Job.is_array(id)]
         if arrays:
