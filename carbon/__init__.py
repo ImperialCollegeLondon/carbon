@@ -67,37 +67,33 @@ def run(
             memtime=dummy.memory_usage * dummy.run_time,
             node=dummy.node,
         )
+        dummy_node = Node(
+            name=dummy.node,
+            cpu_type=dummy.cpu_type,
+            gpu_type=dummy.gpu_type,
+            mem_type=dummy.mem_type,
+            per_core_power_watts=config.cpus[dummy.cpu_type]["per_core_power_watts"],
+            per_gpu_power_watts=config.gpus[dummy.gpu_type]["per_gpu_power_watts"]
+            if dummy.gpu_type
+            else 0.0,
+            per_gb_power_watts=config.memory[dummy.mem_type]["per_gb_power_watts"],
+        )
         job_list = [dummy_job] * len(job_ids)
+        node_list = [dummy_node] * len(job_ids)
     else:
         job_list = Job.from_PBS_bulk(job_ids, ignore_failed)
+        node_list = Node.from_PBS_bulk(
+            [job.node for job in job_list],
+            {
+                "cpus": config.cpus,
+                "gpus": config.gpus,
+                "memory": config.memory,
+            },
+        )
 
     result_list = []
 
-    for job in job_list:
-        if config.dummy_job:
-            node = Node(
-                name=dummy.node,
-                cpu_type=dummy.cpu_type,
-                gpu_type=dummy.gpu_type,
-                mem_type=dummy.mem_type,
-                per_core_power_watts=config.cpus[dummy.cpu_type][
-                    "per_core_power_watts"
-                ],
-                per_gpu_power_watts=config.gpus[dummy.gpu_type]["per_gpu_power_watts"]
-                if dummy.gpu_type
-                else 0.0,
-                per_gb_power_watts=config.memory[dummy.mem_type]["per_gb_power_watts"],
-            )
-        else:
-            node = Node.from_PBS(
-                job.node,
-                {
-                    "cpus": config.cpus,
-                    "gpus": config.gpus,
-                    "memory": config.memory,
-                },
-            )
-
+    for job, node in zip(job_list, node_list):
         # Calculate energy consumption
         energy_consumed = job.calculate_energy(node, config.pue)
 
