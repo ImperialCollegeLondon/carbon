@@ -101,7 +101,9 @@ def main(
 
     # Run the carbon calculation
     try:
-        results, failed_count = run(job_ids, config, default_intensity, ignore_failed)
+        results, failed_count = run(
+            list(job_ids), config, default_intensity, ignore_failed
+        )
     except (UnknownJobIDError, MalformedJobIDError) as e:
         print(f"Error: {e}. Please check the job ID.")
         sys.exit(1)
