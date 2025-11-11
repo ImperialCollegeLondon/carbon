@@ -101,7 +101,7 @@ def main(
 
     # Run the carbon calculation
     try:
-        results = run(job_ids, config, default_intensity, ignore_failed)
+        results, failed_count = run(job_ids, config, default_intensity, ignore_failed)
     except (UnknownJobIDError, MalformedJobIDError) as e:
         print(f"Error: {e}. Please check the job ID.")
         sys.exit(1)
@@ -116,17 +116,22 @@ def main(
     for result in results:
         if result.job.state == JobState.RUNNING:
             if len(results) == 1:
-                print("Job is still running. ", end="")
+                print("Warning: Job is still running. ", end="")
             else:
-                print("Some jobs are still running. ", end="")
+                print("Warning: Some jobs are still running. ", end="")
             print(
                 "Note that energy and emissions estimates will be for only the "
                 "completed portion of the job and may not reflect total emissions."
             )
             break
 
+    # Warn if any jobs failed to be analysed
+    if failed_count > 0:
+        print(f"Warning: {failed_count} job(s) could not be analysed.")
+        print("")
+
     # Print output
-    if not results and not ignore_failed:
+    if not results:
         print("No results to show. Issue in parsing or analysing job(s).")
     elif split_jobs:
         for result in results:
