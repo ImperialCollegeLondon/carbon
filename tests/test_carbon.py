@@ -1,10 +1,4 @@
-"""Integration tests for the CLI/main behaviour using the dummy config.
-
-These tests exercise the CLI entrypoint without mocking by relying on the
-repository's `clusters/dummy.yaml` which provides a `dummy_job` fixture for
-deterministic output. Tests use `--default_intensity` to avoid external API
-calls and ensure repeatable numbers.
-"""
+"""Integration tests for the CLI/main behaviour using the dummy config."""
 
 from pathlib import Path
 

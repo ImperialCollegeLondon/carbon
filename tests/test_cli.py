@@ -1,3 +1,5 @@
+"""Unit tests for the command-line interface."""
+
 from datetime import datetime
 from pathlib import Path
 
