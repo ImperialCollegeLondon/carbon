@@ -15,6 +15,12 @@ from typing import Self
 
 from carbon.node import Node
 
+# Pre-compile regular expressions for performance.
+# These patterns are used during job id validation.
+JOB_ID_RE = re.compile(r"^\d+(\[\d+\])?(?:..*)?$")
+SUBJOB_ID_RE = re.compile(r"^\d+\[\d+\](?:..*)?$")
+ARRAY_ID_RE = re.compile(r"^\d+\[\](?:..*)?$")
+
 
 class UnknownJobIDError(ValueError):
     """Raised for unknown job IDs."""
@@ -105,7 +111,7 @@ class Job:
     def split_sub_jobs(cls, job_id: str) -> list[str]:
         """Split a PBS array job id into the corresponding list of subjob ids."""
         # Job ID for array should be digits followed by square brackets
-        if not re.fullmatch(r"^\d+\[\](?:..*)?$", job_id):
+        if not ARRAY_ID_RE.fullmatch(job_id):
             raise MalformedJobIDError(
                 f"Malformed array job ID: {job_id}. Should contain only digits, "
                 "followed by square brackets"
@@ -138,7 +144,7 @@ class Job:
             state = items[4]
             # Get all the subjobs which are running, finished, or expired (finished but
             # other subjobs are still running).
-            if re.fullmatch(r"^\d+\[\d+\](?:..*)?$", label) and state in [
+            if SUBJOB_ID_RE.fullmatch(label) and state in [
                 "R",
                 "F",
                 "X",
@@ -171,7 +177,7 @@ class Job:
         """
         malformed_ids = []
         for id in ids:
-            if not re.fullmatch(r"^\d+(\[\d+\])?(?:..*)?$", id):
+            if not JOB_ID_RE.fullmatch(id):
                 malformed_ids.append(id)
         if malformed_ids and not ignore_failed:
             raise MalformedJobIDError(
