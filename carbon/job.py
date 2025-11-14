@@ -111,6 +111,7 @@ class Job:
                 "followed by square brackets"
             )
 
+        # Use -J and -t flags to output a table of array subjobs
         cmd = f"qstat -xJt {job_id}"
 
         try:
