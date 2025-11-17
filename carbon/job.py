@@ -233,13 +233,10 @@ class Job:
                     elif e.returncode == 1 or e.returncode == 170:
                         raise MalformedJobIDError(f"Malformed job ID(s): {bad_ids}")
             else:
-                raise ValueError(f"Failed to fetch job data: {e}")
+                raise
 
-        try:
-            stdout = output.stdout if not e_stdout else e_stdout
-            job_data = json.loads(stdout)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse job data: {e}")
+        stdout = output.stdout if not e_stdout else e_stdout
+        job_data = json.loads(stdout)
 
         if not job_data:
             raise ValueError(f"No job data found for ID(s): {ids}")
