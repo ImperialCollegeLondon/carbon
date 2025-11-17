@@ -203,7 +203,7 @@ class Job:
 
         # Placeholder for storing partial stdout if subprocess raises and ignore_failed
         # is True.
-        e_stdout: bytes | None = None
+        e_stdout = b""
 
         try:
             output = subprocess.run(
