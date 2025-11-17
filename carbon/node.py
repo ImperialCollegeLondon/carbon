@@ -36,22 +36,6 @@ class Node:
 
     @classmethod
     def from_PBS(
-        cls, node_label: str, component_powers: dict[str, dict[str, dict[str, float]]]
-    ) -> Self:
-        """Create a Node object by fetching info from PBS and cluster config.
-
-        Args:
-            node_label (str): The label of the node to query.
-            component_powers (dict): Dictionary with keys 'cpus', 'gpus', 'memory'.
-
-        Returns:
-            Node: An instance of Node with hardware and power info.
-        """
-        nodes = cls.from_PBS_bulk([node_label], component_powers)
-        return nodes[0]
-
-    @classmethod
-    def from_PBS_bulk(
         cls,
         node_labels: list[str],
         component_powers: dict[str, dict[str, dict[str, float]]],

@@ -161,7 +161,7 @@ class Job:
         return sub_jobs
 
     @classmethod
-    def from_PBS_bulk(cls, ids: list[str], ignore_failed: bool = False) -> list[Self]:
+    def from_PBS(cls, ids: list[str], ignore_failed: bool = False) -> list[Self]:
         """Create a list of Job objects by fetching data from PBS for multiple job IDs.
 
         Args:
@@ -313,27 +313,6 @@ class Job:
                 else:
                     raise ValueError(f"Missing expected job data: {e}")
         return job_list
-
-    @classmethod
-    def from_PBS(cls, id: str) -> Self:
-        """Create a single Job object by fetching data from PBS based on the job ID.
-
-        Args:
-            id (str): The job identifier to fetch from the scheduler.
-
-        Returns:
-            Job: An instance of the Job class populated with scheduler data.
-
-        Raises:
-            ValueError: If fetching or parsing job data fails, or if no job data is
-                found.
-            UnknownJobIDError: If PBS returns exit code 153 for unknown job ID.
-            MalformedJobIDError: If the job ID is not formatted correctly.
-            JobStateError: If the job is in an invalid state.
-            NotImplementedError: If the memory format is not supported.
-        """
-        jobs = cls.from_PBS_bulk([id])
-        return jobs[0]
 
     def calculate_energy(self, node: Node, pue: float) -> float:
         """Calculate energy consumption in kilowatt-hours for a compute job.

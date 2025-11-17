@@ -46,7 +46,7 @@ def test_from_PBS_bulk_ignore_failed_true(monkeypatch) -> None:
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    jobs = Job.from_PBS_bulk(["123", "456"], ignore_failed=True)
+    jobs = Job.from_PBS(["123", "456"], ignore_failed=True)
     assert len(jobs) == 1
     assert jobs[0].id == "123"
 
@@ -66,7 +66,7 @@ def test_from_PBS_bulk_ignore_failed_false_raises(monkeypatch) -> None:
     monkeypatch.setattr(subprocess, "run", fake_run)
 
     with pytest.raises(UnknownJobIDError):
-        Job.from_PBS_bulk(["123", "456"], ignore_failed=False)
+        Job.from_PBS(["123", "456"], ignore_failed=False)
 
 
 @pytest.mark.parametrize(
@@ -79,7 +79,7 @@ def test_fromPBS_parse_job(isMPIjob: bool, first_node_name: str) -> None:
     mock_proc.stdout = _make_PBSjob_json("12345", isMPIjob)
 
     with patch("carbon.job.subprocess.run", return_value=mock_proc):
-        job = Job.from_PBS("12345")
+        job = Job.from_PBS(["12345"])[0]
     assert job.id == "12345"
     assert job.starttime == datetime.strptime(
         "Wed Jul 09 12:00:00 2025", "%a %b %d %H:%M:%S %Y"

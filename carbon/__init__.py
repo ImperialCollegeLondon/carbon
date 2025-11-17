@@ -80,8 +80,8 @@ def run(
         job_list = [dummy_job] * len(job_ids)
         node_list = [dummy_node] * len(job_ids)
     else:
-        job_list = Job.from_PBS_bulk(job_ids, ignore_failed)
-        node_list = Node.from_PBS_bulk(
+        job_list = Job.from_PBS(job_ids, ignore_failed)
+        node_list = Node.from_PBS(
             [job.node for job in job_list],
             {
                 "cpus": config.cpus,
