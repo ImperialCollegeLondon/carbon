@@ -29,7 +29,7 @@ def run(
     config: ClusterConfig,
     default_intensity: bool,
     ignore_failed: bool,
-) -> tuple[list[RunResult], int]:
+) -> list[RunResult]:
     """Estimate the carbon emissions of compute jobs.
 
     Args:
@@ -40,8 +40,7 @@ def run(
             analysed and don't add respective results to the results list.
 
     Returns:
-        tuple[list[RunResult], int]: The results of the carbon calculations, plus an
-            integer count of failed analyses.
+        list[RunResult]: The results of the carbon calculations.
     """
     if len(job_ids) > 1:
         arrays = [id for id in job_ids if Job.is_array(id)]
@@ -117,4 +116,4 @@ def run(
             )
         )
 
-    return result_list, len(job_ids) - len(result_list)
+    return result_list
