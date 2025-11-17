@@ -49,10 +49,8 @@ def test_cli_split_jobs_prints_each(monkeypatch) -> None:
     """
     cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
 
-    def fake_run(
-        job_ids, config, default_intensity, ignore_failed
-    ) -> tuple[list[RunResult], int]:
-        return [make_result("jobA"), make_result("jobB")], 0
+    def fake_run(job_ids, config, default_intensity, ignore_failed) -> list[RunResult]:
+        return [make_result("jobA"), make_result("jobB")]
 
     # Patch the run function used by the CLI module
     monkeypatch.setattr("carbon.__main__.run", fake_run)
@@ -77,10 +75,8 @@ def test_cli_aggregate_prints_aggregate(monkeypatch) -> None:
     cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
     results = [make_result("jobA"), make_result("jobB")]
 
-    def fake_run(
-        job_ids, config, default_intensity, ignore_failed
-    ) -> tuple[list[RunResult], int]:
-        return results, 0
+    def fake_run(job_ids, config, default_intensity, ignore_failed) -> list[RunResult]:
+        return results
 
     monkeypatch.setattr("carbon.__main__.run", fake_run)
 
