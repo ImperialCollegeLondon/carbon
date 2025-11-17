@@ -53,6 +53,12 @@ class UnsupportedJobType(ValueError):
         self.job_type = job_type
 
 
+class MissingJobData(ValueError):
+    """Raised when job data is missing from object returned by scheduler."""
+
+    pass
+
+
 class JobState(Enum):
     """Enumeration of supported job states."""
 
@@ -238,8 +244,8 @@ class Job:
         stdout = output.stdout if not e_stdout else e_stdout
         job_data = json.loads(stdout)
 
-        if not job_data:
-            raise ValueError(f"No job data found for ID(s): {ids}")
+        if not job_data or "Jobs" not in job_data.keys():
+            raise MissingJobData(f"No job data found for ID(s): {ids}")
 
         job_list = []
         for internal_id in job_data["Jobs"]:
