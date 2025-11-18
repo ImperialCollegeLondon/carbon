@@ -150,11 +150,7 @@ class Job:
             state = items[4]
             # Get all the subjobs which are running, finished, or expired (finished but
             # other subjobs are still running).
-            if SUBJOB_ID_RE.fullmatch(label) and state in [
-                "R",
-                "F",
-                "X",
-            ]:
+            if SUBJOB_ID_RE.fullmatch(label) and state in JobState:
                 # Add subjobs without server label to improve consistency
                 sub_jobs.append(label.split(".")[0])
 
@@ -251,7 +247,7 @@ class Job:
         for internal_id in job_data["Jobs"]:
             try:
                 state = job_data["Jobs"][internal_id]["job_state"]
-                if state not in ["F", "R", "X"]:
+                if state not in JobState:
                     if ignore_failed:
                         continue
                     else:
