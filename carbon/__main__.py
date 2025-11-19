@@ -81,6 +81,7 @@ def main(
         JobState,
         JobStateError,
         MalformedJobIDError,
+        MissingJobDataError,
         UnknownJobIDError,
         UnsupportedJobType,
     )
@@ -106,7 +107,7 @@ def main(
     except (UnknownJobIDError, MalformedJobIDError) as e:
         print(f"Error: {e}. Please check the job ID.")
         sys.exit(1)
-    except JobStateError as e:
+    except (JobStateError, MissingJobDataError) as e:
         print(f"Error: {e}")
         sys.exit(1)
     except UnsupportedJobType as e:

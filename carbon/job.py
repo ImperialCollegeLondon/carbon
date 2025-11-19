@@ -53,7 +53,7 @@ class UnsupportedJobType(ValueError):
         self.job_type = job_type
 
 
-class MissingJobData(ValueError):
+class MissingJobDataError(ValueError):
     """Raised when job data is missing from object returned by scheduler."""
 
     pass
@@ -241,7 +241,7 @@ class Job:
         job_data = json.loads(stdout)
 
         if not job_data or "Jobs" not in job_data.keys():
-            raise MissingJobData(f"No job data found for ID(s): {ids}")
+            raise MissingJobDataError(f"No job data found for ID(s): {ids}")
 
         job_list = []
         for internal_id in job_data["Jobs"]:
@@ -307,7 +307,7 @@ class Job:
                 if ignore_failed:
                     continue
                 else:
-                    raise ValueError(f"Missing expected job data: {e}")
+                    raise MissingJobDataError(f"Missing expected job data: {e}")
         return job_list
 
     def calculate_energy(self, node: Node, pue: float) -> float:
