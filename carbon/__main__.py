@@ -112,6 +112,9 @@ def main(
     except UnsupportedJobType as e:
         print(f"Error: Handling of {e.job_type} jobs not currently implemented.")
         sys.exit(1)
+    except Exception as e:
+        print(f"Error: An unexpected error occurred: {e}")
+        sys.exit(1)
 
     # Warn if any jobs are still running
     for result in results:
