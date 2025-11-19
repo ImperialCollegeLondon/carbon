@@ -1,6 +1,8 @@
 # carbon
 
-Estimates carbon emissions of compute jobs run on the Imperial College London HPC clusters.
+Estimates carbon emissions of compute jobs run on high-performance computing clusters.
+
+This tool has been developed for use on Imperial College London's compute clusters. However, the structure of the code has been designed with the view of potential extension for use on other clusters.
 
 ## For developers
 
