@@ -1,13 +1,14 @@
 """Unit tests for the Job class and hours conversion."""
 
 import json
+import subprocess
 from datetime import datetime
 from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
 
-from carbon.job import Job, hours
+from carbon.job import Job, UnknownJobIDError, hours
 from carbon.node import Node
 
 
@@ -29,6 +30,45 @@ def _make_PBSjob_json(internal_id: str = "12345", mpijob: bool = False) -> bytes
     return json.dumps(job_data).encode()
 
 
+def test_from_PBS_bulk_ignore_failed_true(monkeypatch) -> None:
+    """Ensure partial stdout from qstat is parsed when ignore_failed is True."""
+    # partial_bytes = json.dumps(_partial_job_json()).encode()
+
+    def fake_run(
+        cmd, shell, check, timeout, capture_output
+    ) -> subprocess.CalledProcessError:
+        # Simulate qstat returning exit code 153 (unknown job), but writing
+        # valid JSON for some jobs to stdout.
+        e = subprocess.CalledProcessError(153, cmd)
+        e.stdout = _make_PBSjob_json("123")
+        e.stderr = b"Unknown job ID: 456"
+        raise e
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    jobs = Job.from_PBS(["123", "456"], ignore_failed=True)
+    assert len(jobs) == 1
+    assert jobs[0].id == "123"
+
+
+def test_from_PBS_bulk_ignore_failed_false_raises(monkeypatch) -> None:
+    """Verify an error is raised when ignore_failed is False and qstat fails."""
+    # partial_bytes = json.dumps(_partial_job_json()).encode()
+
+    def fake_run(
+        cmd, shell, check, timeout, capture_output
+    ) -> subprocess.CalledProcessError:
+        e = subprocess.CalledProcessError(153, cmd)
+        e.stdout = _make_PBSjob_json("123")
+        e.stderr = b"Unknown job ID: 456"
+        raise e
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    with pytest.raises(UnknownJobIDError):
+        Job.from_PBS(["123", "456"], ignore_failed=False)
+
+
 @pytest.mark.parametrize(
     "isMPIjob, first_node_name",
     [(False, "cx3-3-0"), (True, "cx3-3-1")],
@@ -39,15 +79,15 @@ def test_fromPBS_parse_job(isMPIjob: bool, first_node_name: str) -> None:
     mock_proc.stdout = _make_PBSjob_json("12345", isMPIjob)
 
     with patch("carbon.job.subprocess.run", return_value=mock_proc):
-        job = Job.fromPBS("12345")
+        job = Job.from_PBS(["12345"])[0]
     assert job.id == "12345"
     assert job.starttime == datetime.strptime(
         "Wed Jul 09 12:00:00 2025", "%a %b %d %H:%M:%S %Y"
     )
     assert job.runtime == 2.0
     assert job.cputime == 4.0
-    assert job.memory == 12.0
-    assert job.ngpus == 1
+    assert job.gputime == 2.0
+    assert job.memtime == 24.0
     # For MPI jobs, the first node in the list is taken
     assert job.node == first_node_name
 
@@ -66,16 +106,16 @@ def test_job_init() -> None:
         starttime=datetime(2025, 8, 21, 10, 0, 0),
         runtime=2.0,
         cputime=4.0,
-        ngpus=2,
-        memory=32.0,
+        gputime=2.0,
+        memtime=64.0,
         node="node01",
     )
     assert job.id == "12345"
     assert job.starttime == datetime(2025, 8, 21, 10, 0, 0)
     assert job.runtime == 2.0
     assert job.cputime == 4.0
-    assert job.ngpus == 2
-    assert job.memory == 32.0
+    assert job.gputime == 2.0
+    assert job.memtime == 64.0
     assert job.node == "node01"
 
 
@@ -86,8 +126,8 @@ def test_energy_calculate() -> None:
         starttime=datetime(2025, 8, 21, 10, 0, 0),
         runtime=2.0,
         cputime=2.0,
-        ngpus=1,
-        memory=16.0,
+        gputime=2.0,
+        memtime=32.0,
         node="node01",
     )
     node = Node(
@@ -100,7 +140,7 @@ def test_energy_calculate() -> None:
         per_gb_power_watts=2.0,
     )
 
-    expected = ((10.0 * 2.0) + (200.0 * 1 * 2.0) + (2.0 * 16.0 * 2.0)) * 1.5 / 1000.0
+    expected = ((10.0 * 2.0) + (200.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
     result = job.calculate_energy(node, 1.5)
 
     assert np.isclose(result, expected, atol=1e-9)
@@ -113,8 +153,8 @@ def test_energy_calculate_no_gpu() -> None:
         starttime=datetime(2025, 8, 21, 10, 0, 0),
         runtime=2.0,
         cputime=2.0,
-        ngpus=0,
-        memory=16.0,
+        gputime=0.0,
+        memtime=32.0,
         node="node01",
     )
     node = Node(
@@ -127,7 +167,7 @@ def test_energy_calculate_no_gpu() -> None:
         per_gb_power_watts=2.0,
     )
 
-    expected = ((10.0 * 2.0) + (2.0 * 16.0 * 2.0)) * 1.5 / 1000.0
+    expected = ((10.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
     result = job.calculate_energy(node, 1.5)
 
     assert np.isclose(result, expected, atol=1e-9)

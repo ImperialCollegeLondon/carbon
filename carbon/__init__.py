@@ -6,7 +6,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 from carbon.clusterconfig import ClusterConfig
 from carbon.intensity import CarbonIntensity
-from carbon.job import Job, UnsupportedJobType
+from carbon.job import Job
 from carbon.node import Node
 
 with suppress(PackageNotFoundError):
@@ -25,32 +25,48 @@ class RunResult:
 
 
 def run(
-    job_id: str, config: ClusterConfig, default_intensity: bool = False
-) -> RunResult:
-    """Estimate the carbon emissions of a compute job.
+    job_ids: list[str],
+    config: ClusterConfig,
+    default_intensity: bool,
+    ignore_failed: bool,
+) -> list[RunResult]:
+    """Estimate the carbon emissions of compute jobs.
 
     Args:
-        job_id (str): The job identifier to analyze.
+        job_ids (list[str]): The list of job identifiers to analyze.
         config (ClusterConfig): The cluster configuration.
         default_intensity (bool): If True, use a default carbon intensity value.
+        ignore_failed (bool): If True, don't crash out when jobs cannot be parsed or
+            analysed and don't add respective results to the results list.
 
     Returns:
-        RunResult: The results of the carbon calculation.
+        list[RunResult]: The results of the carbon calculations.
     """
-    # Get the job data and node hardware info
+    if len(job_ids) > 1:
+        arrays = [id for id in job_ids if Job.is_array(id)]
+        if arrays:
+            raise NotImplementedError(
+                "Detected multiple array jobs: " + " ".join(arrays) + ". "
+                "Analysis of multiple array jobs not implemented. "
+                "Please provide a single array job, or a list of jobs/subjobs."
+            )
+    elif Job.is_array(job_ids[0]):
+        job_ids = Job.split_sub_jobs(job_ids[0])
+
     if config.dummy_job:
         # Use dummy job data for testing
+        # If multiple ids provided, just duplicate the dummy job
         dummy = config.dummy_job
-        job = Job(
-            job_id,
-            dummy.start_time,
-            dummy.run_time,
-            dummy.cpu_time,
-            dummy.ngpus,
-            dummy.memory_usage,
-            dummy.node,
+        dummy_job = Job(
+            id="dummy_job",
+            starttime=dummy.start_time,
+            runtime=dummy.run_time,
+            cputime=dummy.cpu_time,
+            gputime=dummy.ngpus * dummy.run_time,
+            memtime=dummy.memory_usage * dummy.run_time,
+            node=dummy.node,
         )
-        node = Node(
+        dummy_node = Node(
             name=dummy.node,
             cpu_type=dummy.cpu_type,
             gpu_type=dummy.gpu_type,
@@ -61,39 +77,43 @@ def run(
             else 0.0,
             per_gb_power_watts=config.memory[dummy.mem_type]["per_gb_power_watts"],
         )
+        job_list = [dummy_job] * len(job_ids)
+        node_list = [dummy_node] * len(job_ids)
     else:
-        # Remove suffix to make IDs more uniform
-        id = job_id.split(".")[0]
-
-        if id.endswith("[]"):
-            raise UnsupportedJobType("array")
-
-        # Fetch job data from the cluster's job scheduler
-        job = Job.fromPBS(id)
-        node = Node.fromPBS(
-            job.node,
+        job_list = Job.from_PBS(job_ids, ignore_failed)
+        node_list = Node.from_PBS(
+            [job.node for job in job_list],
             {
                 "cpus": config.cpus,
                 "gpus": config.gpus,
                 "memory": config.memory,
             },
         )
-    # Calculate energy consumption
-    energy_consumed = job.calculate_energy(node, config.pue)
 
-    # Fetch carbon intensity at job start time or use a default value
-    if default_intensity:
-        intensity = 137.0  # gCO2/kWh, UK average over 2023 and 2024
-    else:
-        carbon_intensity = CarbonIntensity(job.starttime, region_id=config.region_id)
-        intensity = carbon_intensity.fetch()
+    result_list = []
 
-    # Calculate emissions
-    emissions = intensity * energy_consumed
-    return RunResult(
-        node=node,
-        emissions=emissions,
-        energy_consumed=energy_consumed,
-        job=job,
-        carbon_intensity=intensity,
-    )
+    for job, node in zip(job_list, node_list):
+        # Calculate energy consumption
+        energy_consumed = job.calculate_energy(node, config.pue)
+
+        # Fetch carbon intensity at job start time or use a default value
+        if default_intensity:
+            intensity = 137.0  # gCO2/kWh, UK average over 2023 and 2024
+        else:
+            carbon_intensity = CarbonIntensity(job.starttime, config.region_id)
+            intensity = carbon_intensity.fetch()
+
+        # Calculate emissions
+        emissions = intensity * energy_consumed
+
+        result_list.append(
+            RunResult(
+                node=node,
+                emissions=emissions,
+                energy_consumed=energy_consumed,
+                job=job,
+                carbon_intensity=intensity,
+            )
+        )
+
+    return result_list

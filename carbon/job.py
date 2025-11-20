@@ -10,9 +10,16 @@ import re
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from typing import Self
 
 from carbon.node import Node
+
+# Pre-compile regular expressions for performance.
+# These patterns are used during job id validation.
+JOB_ID_RE = re.compile(r"^\d+(\[\d+\])?(?:..*)?$")
+SUBJOB_ID_RE = re.compile(r"^\d+\[\d+\](?:..*)?$")
+ARRAY_ID_RE = re.compile(r"^\d+\[\](?:..*)?$")
 
 
 class UnknownJobIDError(ValueError):
@@ -46,6 +53,20 @@ class UnsupportedJobType(ValueError):
         self.job_type = job_type
 
 
+class MissingJobDataError(ValueError):
+    """Raised when job data is missing from object returned by scheduler."""
+
+    pass
+
+
+class JobState(Enum):
+    """Enumeration of supported job states."""
+
+    FINISHED = "F"
+    RUNNING = "R"
+    EXPIRED = "X"
+
+
 def hours(time: str) -> float:
     """Convert a time string in HH:MM:SS format to hours.
 
@@ -75,40 +96,110 @@ class Job:
     cputime: float
     """The total CPU time used by the job in core-hours."""
 
-    ngpus: int
-    """The number of GPUs used by the job."""
+    gputime: float
+    """The total GPU time used by the job in component-hours."""
 
-    memory: float
-    """The memory allocated to the job in GB."""
+    memtime: float
+    """The total memory-time allocated to the job in GB-hours."""
 
     node: str
     """The node the job was executed on."""
 
+    state: JobState = JobState.FINISHED
+    """The state of the job."""
+
     @classmethod
-    def fromPBS(cls, id: str) -> Self:
-        """Create a Job object by fetching data from PBS based on the job ID.
+    def is_array(cls, job_id: str) -> bool:
+        """Is it a PBS array job?"""
+        return job_id.split(".")[0].endswith("[]")
+
+    @classmethod
+    def split_sub_jobs(cls, job_id: str) -> list[str]:
+        """Split a PBS array job id into the corresponding list of subjob ids."""
+        # Job ID for array should be digits followed by square brackets
+        if not ARRAY_ID_RE.fullmatch(job_id):
+            raise MalformedJobIDError(
+                f"Malformed array job ID: {job_id}. Should contain only digits, "
+                "followed by square brackets"
+            )
+
+        # Use -J and -t flags to output a table of array subjobs
+        cmd = f"qstat -xJt {job_id}"
+
+        try:
+            output = subprocess.run(
+                cmd,
+                shell=True,
+                check=True,
+                timeout=20,
+                capture_output=True,
+                text=True,  # Potentially a 10000 line long str. Could improve?
+            )
+        except subprocess.CalledProcessError as e:
+            if e.returncode == 153:
+                raise UnknownJobIDError(f"Unknown job ID: {job_id}")
+            elif e.returncode == 1 or e.returncode == 170:
+                raise MalformedJobIDError(f"Malformed job ID: {job_id}")
+            else:
+                raise ValueError(f"Failed to fetch job data: {e}")
+
+        sub_jobs = []
+        for row in output.stdout.splitlines()[3:]:
+            items = row.split()
+            label = items[0]
+            state = items[4]
+            # Get all the subjobs which are running, finished, or expired (finished but
+            # other subjobs are still running).
+            if SUBJOB_ID_RE.fullmatch(label) and state in JobState:
+                # Add subjobs without server label to improve consistency
+                sub_jobs.append(label.split(".")[0])
+
+        return sub_jobs
+
+    @classmethod
+    def from_PBS(cls, ids: list[str], ignore_failed: bool = False) -> list[Self]:
+        """Create a list of Job objects by fetching data from PBS for multiple job IDs.
 
         Args:
-            id (str): The job identifier to fetch from the scheduler.
+            ids (list[str]): The job identifiers to fetch from the scheduler.
+            ignore_failed (bool): If True, don't crash out when jobs cannot be parsed
+                but don't add to the job list.
 
         Returns:
-            Job: An instance of the Job class populated with scheduler data.
+            list[Job]: A list containing instances of the Job class corresponding to
+                each of the ids.
 
         Raises:
             ValueError: If fetching or parsing job data fails, or if no job data is
                 found.
             UnknownJobIDError: If PBS returns exit code 153 for unknown job ID.
-            MalformedJobIDError: If the job ID is not formatted correctly.
-            JobStateError: If the job is in an invalid state.
+            MalformedJobIDError: If some of the job IDs are not formatted correctly.
+            JobStateError: If some of the jobs are in an invalid state.
             NotImplementedError: If the memory format is not supported.
         """
-        # Job ID should either be digits only or digits plus an index in square brackets
-        if not re.fullmatch(r"\d+(\[\d+\])?", id):
+        malformed_ids = []
+        for id in ids:
+            if not JOB_ID_RE.fullmatch(id):
+                malformed_ids.append(id)
+        if malformed_ids and not ignore_failed:
             raise MalformedJobIDError(
-                f"Malformed job ID: {id}. Should contain only digits"
+                "Malformed job ID(s): " + " ".join(malformed_ids) + ". "
+                "Should be composed of digits, "
+                "optionally followed by an index in square brackets, "
+                "optionally followed by a full stop and the PBS server name."
             )
+        elif malformed_ids and ignore_failed:
+            # Remove malformed ids from the list of ids
+            ids = [id for id in ids if id not in malformed_ids]
 
-        cmd = f"qstat -xfF json {id}"
+        if not ids:
+            return []
+
+        cmd = "qstat -xfF json " + " ".join(ids)
+
+        # Placeholder for storing partial stdout if subprocess raises and ignore_failed
+        # is True.
+        e_stdout = b""
 
         try:
             output = subprocess.run(
@@ -119,76 +210,105 @@ class Job:
                 capture_output=True,
             )
         except subprocess.CalledProcessError as e:
-            if e.returncode == 153:
-                raise UnknownJobIDError(f"Unknown job ID: {id}")
-            elif e.returncode == 1 or e.returncode == 170:
-                raise MalformedJobIDError(f"Malformed job ID: {id}")
+            # PBS may return a non-zero exit code while still printing valid JSON
+            # to stdout for the jobs it could find. If ignore_failed is True,
+            # attempt to parse e.stdout and continue with the valid jobs. If not,
+            # raise the appropriate exception.
+
+            if e.returncode in [153, 1, 170]:
+                # Try to extract the list of bad ids from stderr if present
+                bad_ids = " ".join(
+                    [
+                        line.split()[-1]
+                        for line in str(e.stderr, "utf-8").splitlines()
+                        if line.strip()
+                    ]
+                )
+
+                # If the caller asked us to ignore failed ids, and there is
+                # partial JSON output on stdout, parse that and continue.
+                if ignore_failed:
+                    e_stdout = e.stdout
+                else:
+                    if e.returncode == 153:
+                        raise UnknownJobIDError(f"Unknown job ID(s): {bad_ids}")
+                    elif e.returncode == 1 or e.returncode == 170:
+                        raise MalformedJobIDError(f"Malformed job ID(s): {bad_ids}")
             else:
-                raise ValueError(f"Failed to fetch job data: {e}")
+                raise
 
-        try:
-            job_data = json.loads(output.stdout)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse job data: {e}")
-        if not job_data:
-            raise ValueError(f"No job data found for ID {id}")
+        stdout = output.stdout if not e_stdout else e_stdout
+        job_data = json.loads(stdout)
 
-        # Get the job ID as recorded by the job scheduler.
-        # Here we assume only one job was captured by qstat.
-        # If multiple jobs are returned, this will only return the first one.
-        internal_id = next(iter(job_data["Jobs"]))
-        state = job_data["Jobs"][internal_id]["job_state"]
-        if not (state == "F" or state == "R"):
-            raise JobStateError(
-                f"Analysis of jobs with state {state} is not "
-                "currently supported. Please specify a running (R) or "
-                "finished (F) job."
-            )
+        if not job_data or "Jobs" not in job_data.keys():
+            raise MissingJobDataError(f"No job data found for ID(s): {ids}")
 
-        if state == "R":
-            print(
-                f"Job {internal_id} is currently running. Note that energy and "
-                "emissions estimates will be for only the completed portion of the job "
-                "and may not reflect total emissions."
-            )
+        job_list = []
+        for internal_id in job_data["Jobs"]:
+            try:
+                state = job_data["Jobs"][internal_id]["job_state"]
+                if state not in JobState:
+                    if ignore_failed:
+                        continue
+                    else:
+                        raise JobStateError(
+                            f"Analysis of jobs with state {state} is not "
+                            "currently supported. Please specify a running (R), "
+                            "finished (F), or expired (X) job."
+                        )
 
-        # If the job ran on multiple nodes (e.g., using MPI), just take the first one.
-        # This will be used to get the cpu_type and gpu_type, which should be the same
-        # across the nodes.
-        nodes = [
-            name.split("/", 1)[0]
-            for name in job_data["Jobs"][internal_id]["exec_host"].split("+")
-        ]
-        node = nodes[0]
-        resources_used = job_data["Jobs"][internal_id]["resources_used"]
-        resources_allocated = job_data["Jobs"][internal_id]["Resource_List"]
+                # If the job ran on multiple nodes (e.g., using MPI),
+                # just take the first one. This will be used to get the cpu_type
+                # and gpu_type, which should be the same across the nodes.
+                nodes = [
+                    name.split("/", 1)[0]
+                    for name in job_data["Jobs"][internal_id]["exec_host"].split("+")
+                ]
+                node = nodes[0]
+                resources_used = job_data["Jobs"][internal_id]["resources_used"]
+                resources_allocated = job_data["Jobs"][internal_id]["Resource_List"]
 
-        # Process some of the job data.
-        starttime = datetime.strptime(
-            job_data["Jobs"][internal_id]["stime"], "%a %b %d %H:%M:%S %Y"
-        )
-        # Allocated memory in gb.
-        # Allocated memory is more relevant for energy consumption.
-        # From DOI:10.1002/advs.202100707
-        _memory = resources_allocated["mem"]
-        if _memory.endswith("gb"):
-            memory = float(_memory[:-2])
-        else:
-            raise NotImplementedError(
-                f"Memory format '{_memory}' not implemented. "
-                "Expected format is 'Xgb' where X is an integer."
-            )
+                # Process some of the job data.
+                starttime = datetime.strptime(
+                    job_data["Jobs"][internal_id]["stime"], "%a %b %d %H:%M:%S %Y"
+                )
 
-        # Create a Job object with the fetched data
-        return cls(
-            id=internal_id,
-            starttime=starttime,
-            runtime=hours(resources_used["walltime"]),
-            cputime=hours(resources_used["cput"]),
-            memory=memory,
-            ngpus=int(resources_allocated["ngpus"]),
-            node=node,
-        )
+                # Allocated memory in gb.
+                # Allocated memory is more relevant for energy consumption.
+                # From DOI:10.1002/advs.202100707
+                _memory = resources_allocated["mem"]
+                if _memory.endswith("gb"):
+                    memory = float(_memory[:-2])
+                elif ignore_failed:
+                    continue
+                else:
+                    raise NotImplementedError(
+                        f"Memory format '{_memory}' not implemented. "
+                        "Expected format is 'Xgb' where X is an integer."
+                    )
+
+                runtime = hours(resources_used["walltime"])
+
+                # Create a Job object with the fetched data
+                # and append to the job_list
+                job_list.append(
+                    cls(
+                        id=internal_id,
+                        starttime=starttime,
+                        runtime=runtime,
+                        cputime=hours(resources_used["cput"]),
+                        gputime=int(resources_allocated["ngpus"]) * runtime,
+                        memtime=memory * runtime,
+                        node=node,
+                        state=JobState(state),
+                    )
+                )
+            except KeyError as e:
+                if ignore_failed:
+                    continue
+                else:
+                    raise MissingJobDataError(f"Missing expected job data: {e}")
+        return job_list
 
     def calculate_energy(self, node: Node, pue: float) -> float:
         """Calculate energy consumption in kilowatt-hours for a compute job.
@@ -203,8 +323,8 @@ class Job:
         return (
             (
                 node.per_core_power_watts * self.cputime
-                + node.per_gpu_power_watts * self.ngpus * self.runtime
-                + node.per_gb_power_watts * self.memory * self.runtime
+                + node.per_gpu_power_watts * self.gputime
+                + node.per_gb_power_watts * self.memtime
             )
             * pue
             / 1000.0
