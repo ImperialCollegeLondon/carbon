@@ -154,6 +154,10 @@ def main(
         total_gputime = 0.0
         total_memtime = 0.0
 
+        total_cpusrequested = 0
+        total_gpusrequested = 0
+        total_memrequested = 0
+
         total_energy_consumed = 0.0
         total_emissions = 0.0
 
@@ -167,6 +171,10 @@ def main(
             total_cputime += job.cputime
             total_gputime += job.gputime
             total_memtime += job.memtime
+
+            total_cpusrequested += job.cpurequest
+            total_gpusrequested += job.gpurequest
+            total_memrequested += job.memrequest
 
             total_energy_consumed += result.energy_consumed
             total_emissions += result.emissions
@@ -183,6 +191,9 @@ def main(
             cputime=total_cputime,
             gputime=total_gputime,
             memtime=total_memtime,
+            cpurequest=total_cpusrequested,
+            gpurequest=total_gpusrequested,
+            memrequest=total_memrequested,
             node="Multiple",
             state=agg_state,
         )
@@ -253,6 +264,18 @@ def output_result(
 
     print(f"Job run on node: {node.name}")
     print(f"Job started at: {job.starttime}")
+    print(f"Job run for (hours): {job.runtime} ")
+    print(
+        "Requested resources: "
+        f"{job.cpurequest} CPU cores, "
+        f"{job.gpurequest} GPUs, "
+        f"{job.memrequest} GB memory",
+        end="",
+    )
+    if isaggregate:
+        print(" (total over all jobs, not necessarily concurrent)")
+    else:
+        print("")
     print(
         f"Estimated energy consumed from {job.cputime:.2f} CPU-hours "
         f"and {job.gputime:.2f} GPU-hours "

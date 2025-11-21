@@ -93,6 +93,15 @@ class Job:
     runtime: float
     """The total runtime of the job in hours."""
 
+    cpurequest: int
+    """The number of CPU cores requested by the job."""
+
+    gpurequest: int
+    """The number of GPUs requested by the job."""
+
+    memrequest: int
+    """The amount of memory requested by the job in GB."""
+
     cputime: float
     """The total CPU time used by the job in core-hours."""
 
@@ -266,19 +275,23 @@ class Job:
                 ]
                 node = nodes[0]
                 resources_used = job_data["Jobs"][internal_id]["resources_used"]
-                resources_allocated = job_data["Jobs"][internal_id]["Resource_List"]
+                resources_requested = job_data["Jobs"][internal_id]["Resource_List"]
 
                 # Process some of the job data.
                 starttime = datetime.strptime(
                     job_data["Jobs"][internal_id]["stime"], "%a %b %d %H:%M:%S %Y"
                 )
 
+                cpurequest = int(resources_requested["ncpus"])
+                gpurequest = int(resources_requested["ngpus"])
+
                 # Allocated memory in gb.
                 # Allocated memory is more relevant for energy consumption.
                 # From DOI:10.1002/advs.202100707
-                _memory = resources_allocated["mem"]
+                _memory = resources_requested["mem"]
                 if _memory.endswith("gb"):
                     memory = float(_memory[:-2])
+                    memrequest = int(memory)
                 elif ignore_failed:
                     continue
                 else:
@@ -296,8 +309,11 @@ class Job:
                         id=internal_id,
                         starttime=starttime,
                         runtime=runtime,
+                        cpurequest=cpurequest,
+                        gpurequest=gpurequest,
+                        memrequest=memrequest,
                         cputime=hours(resources_used["cput"]),
-                        gputime=int(resources_allocated["ngpus"]) * runtime,
+                        gputime=gpurequest * runtime,
                         memtime=memory * runtime,
                         node=node,
                         state=JobState(state),

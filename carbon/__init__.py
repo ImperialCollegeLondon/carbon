@@ -61,9 +61,12 @@ def run(
             id="dummy_job",
             starttime=dummy.start_time,
             runtime=dummy.run_time,
+            cpurequest=dummy.ncpus,
+            gpurequest=dummy.ngpus,
+            memrequest=int(dummy.memory),
             cputime=dummy.cpu_time,
             gputime=dummy.ngpus * dummy.run_time,
-            memtime=dummy.memory_usage * dummy.run_time,
+            memtime=dummy.memory * dummy.run_time,
             node=dummy.node,
         )
         dummy_node = Node(
