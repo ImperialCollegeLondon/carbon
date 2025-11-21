@@ -18,3 +18,5 @@ gpus:
 memory:
   common:
     per_gb_power_watts: 0.3725
+scheduler: pbs
+scheduler_config: {}

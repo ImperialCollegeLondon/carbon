@@ -11,6 +11,21 @@ import click
 
 from carbon import RunResult, run
 from carbon.clusterconfig import ClusterConfig
+from carbon.job.factories import DummyJobFactory, JobFactory, PBSJobFactory
+from carbon.node.factories import DummyNodeFactory, NodeFactory, PBSNodeFactory
+
+
+def get_node_factory_classes() -> dict[str, type[NodeFactory]]:
+    """Get available node factory classes."""
+    # here is where you can do dynamic import gubbins to allow users to supply
+    # their own node factory classes
+    # for now, just return the built-in ones
+    return dict(dummy=DummyNodeFactory, pbs=PBSNodeFactory)
+
+
+def get_job_factory_classes() -> dict[str, type[JobFactory]]:
+    """Get available job factory classes."""
+    return dict(dummy=DummyJobFactory, pbs=PBSJobFactory)
 
 
 @click.command()
@@ -100,9 +115,34 @@ def main(
         config_dict = yaml.safe_load(f)
     config = ClusterConfig(**config_dict)
 
+    try:
+        # also completes validation of scheduler specific config
+        node_factory = get_node_factory_classes()[config.scheduler].from_config(
+            config.scheduler_config,
+            {
+                "cpus": config.cpus,
+                "gpus": config.gpus,
+                "memory": config.memory,
+            },
+        )
+        job_factory = get_job_factory_classes()[config.scheduler].from_config(
+            config.scheduler_config
+        )
+    except KeyError:
+        print(f"Error: Unknown scheduler {config.scheduler}")
+        sys.exit(1)
+
     # Run the carbon calculation
     try:
-        results = run(list(job_ids), config, default_intensity, ignore_failed)
+        results = run(
+            list(job_ids),
+            node_factory,
+            job_factory,
+            config.pue,
+            config.region_id,
+            default_intensity,
+            ignore_failed,
+        )
         failed_count = len(job_ids) - len(results)
     except (UnknownJobIDError, MalformedJobIDError) as e:
         print(f"Error: {e}. Please check the job ID.")
