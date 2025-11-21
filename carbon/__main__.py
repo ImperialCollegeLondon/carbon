@@ -273,7 +273,7 @@ def output_result(
     print(f"Job submitted by user: {job.owner}")
     print(f"Job run on node: {node.name}")
     print(f"Job started at: {job.starttime}")
-    print(f"Job run for (hours): {job.runtime} ")
+    print(f"Job run for (hours): {job.runtime:.2f} ")
     print(
         "Requested resources: "
         f"{job.cpurequest} CPU cores, "
