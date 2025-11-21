@@ -59,6 +59,7 @@ def run(
         dummy = config.dummy_job
         dummy_job = Job(
             id="dummy_job",
+            owner="dummy_user",
             starttime=dummy.start_time,
             runtime=dummy.run_time,
             cpurequest=dummy.ncpus,

@@ -87,6 +87,9 @@ class Job:
     id: str
     """The job identifier."""
 
+    owner: str
+    """The user who submitted the job."""
+
     starttime: datetime
     """The start time of the job."""
 
@@ -255,6 +258,7 @@ class Job:
         job_list = []
         for internal_id in job_data["Jobs"]:
             try:
+                owner = job_data["Jobs"][internal_id]["Job_Owner"].split("@")[0]
                 state = job_data["Jobs"][internal_id]["job_state"]
                 if state not in JobState:
                     if ignore_failed:
@@ -307,6 +311,7 @@ class Job:
                 job_list.append(
                     cls(
                         id=internal_id,
+                        owner=owner,
                         starttime=starttime,
                         runtime=runtime,
                         cpurequest=cpurequest,

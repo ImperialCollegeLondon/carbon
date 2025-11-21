@@ -162,11 +162,18 @@ def main(
         total_emissions = 0.0
 
         agg_state = JobState.FINISHED
+        agg_owner = ""
 
         for result in results:
             job = result.job
             if job.starttime < earliest_startime:
                 earliest_startime = job.starttime
+
+            if not agg_owner:
+                agg_owner = job.owner
+            elif agg_owner != job.owner:
+                agg_owner = "Multiple"
+
             total_runtime += job.runtime
             total_cputime += job.cputime
             total_gputime += job.gputime
@@ -186,6 +193,7 @@ def main(
 
         agg_job = Job(
             id="Aggregate",
+            owner=agg_owner,
             starttime=earliest_startime,
             runtime=total_runtime,
             cputime=total_cputime,
@@ -262,6 +270,7 @@ def output_result(
     if isaggregate:
         print("Aggregating estimates over multiple jobs.")
 
+    print(f"Job submitted by user: {job.owner}")
     print(f"Job run on node: {node.name}")
     print(f"Job started at: {job.starttime}")
     print(f"Job run for (hours): {job.runtime} ")
