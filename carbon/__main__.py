@@ -154,19 +154,34 @@ def main(
         total_gputime = 0.0
         total_memtime = 0.0
 
+        total_cpusrequested = 0
+        total_gpusrequested = 0
+        total_memrequested = 0
+
         total_energy_consumed = 0.0
         total_emissions = 0.0
 
         agg_state = JobState.FINISHED
+        agg_owner = ""
 
         for result in results:
             job = result.job
             if job.starttime < earliest_startime:
                 earliest_startime = job.starttime
+
+            if not agg_owner:
+                agg_owner = job.owner
+            elif agg_owner != job.owner:
+                agg_owner = "Multiple"
+
             total_runtime += job.runtime
             total_cputime += job.cputime
             total_gputime += job.gputime
             total_memtime += job.memtime
+
+            total_cpusrequested += job.cpurequest
+            total_gpusrequested += job.gpurequest
+            total_memrequested += job.memrequest
 
             total_energy_consumed += result.energy_consumed
             total_emissions += result.emissions
@@ -178,11 +193,15 @@ def main(
 
         agg_job = Job(
             id="Aggregate",
+            owner=agg_owner,
             starttime=earliest_startime,
             runtime=total_runtime,
             cputime=total_cputime,
             gputime=total_gputime,
             memtime=total_memtime,
+            cpurequest=total_cpusrequested,
+            gpurequest=total_gpusrequested,
+            memrequest=total_memrequested,
             node="Multiple",
             state=agg_state,
         )
@@ -251,8 +270,21 @@ def output_result(
     if isaggregate:
         print("Aggregating estimates over multiple jobs.")
 
+    print(f"Job submitted by user: {job.owner}")
     print(f"Job run on node: {node.name}")
     print(f"Job started at: {job.starttime}")
+    print(f"Job run for (hours): {job.runtime:.2f} ")
+    print(
+        "Requested resources: "
+        f"{job.cpurequest} CPU cores, "
+        f"{job.gpurequest} GPUs, "
+        f"{job.memrequest} GB memory",
+        end="",
+    )
+    if isaggregate:
+        print(" (total over all jobs, not necessarily concurrent)")
+    else:
+        print("")
     print(
         f"Estimated energy consumed from {job.cputime:.2f} CPU-hours "
         f"and {job.gputime:.2f} GPU-hours "

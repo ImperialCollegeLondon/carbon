@@ -10,10 +10,11 @@ class DummyJob(BaseModel):
 
     Attributes:
         start_time (datetime): Start time of the job in ISO format.
-        cpu_time (float): CPU time used by the job in cpu core-hours.
-        memory_usage (float): Memory allocated to the job in GB.
         run_time (float): Total run time of the job in hours.
+        cpu_time (float): CPU time used by the job in cpu core-hours.
+        ncpus (int): Number of CPU cores used by the job.
         ngpus (int): Number of GPUs used by the job.
+        memory (float): Memory allocated to the job in GB.
         node (str): Label of the node the job was executed on.
         cpu_type (str): CPU type for dummy job.
         gpu_type (str | None): GPU type for dummy job, or None if not present.
@@ -21,10 +22,11 @@ class DummyJob(BaseModel):
     """
 
     start_time: datetime
-    cpu_time: NonNegativeFloat
-    memory_usage: NonNegativeFloat
     run_time: NonNegativeFloat
+    cpu_time: NonNegativeFloat
+    ncpus: NonNegativeInt
     ngpus: NonNegativeInt
+    memory: NonNegativeFloat
     node: str
     cpu_type: str
     gpu_type: str | None = None

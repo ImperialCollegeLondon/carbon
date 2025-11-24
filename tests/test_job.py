@@ -19,11 +19,12 @@ def _make_PBSjob_json(internal_id: str = "12345", mpijob: bool = False) -> bytes
     job_data = {
         "Jobs": {
             internal_id: {
+                "Job_Owner": "testuser@domain",
                 "job_state": "F",
                 "stime": "Wed Jul 09 12:00:00 2025",
                 "exec_host": node_name,
                 "resources_used": {"walltime": "02:00:00", "cput": "04:00:00"},
-                "Resource_List": {"mem": "12gb", "ngpus": "1"},
+                "Resource_List": {"mem": "12gb", "ncpus": "32", "ngpus": "1"},
             }
         }
     }
@@ -103,7 +104,11 @@ def test_job_init() -> None:
     """Test Job initialization."""
     job = Job(
         id="12345",
+        owner="testuser",
         starttime=datetime(2025, 8, 21, 10, 0, 0),
+        cpurequest=2,
+        gpurequest=1,
+        memrequest=32,
         runtime=2.0,
         cputime=4.0,
         gputime=2.0,
@@ -123,9 +128,13 @@ def test_energy_calculate() -> None:
     """Test energy calculation with GPU."""
     job = Job(
         id="12345",
+        owner="testuser",
         starttime=datetime(2025, 8, 21, 10, 0, 0),
+        cpurequest=2,
+        gpurequest=1,
+        memrequest=16,
         runtime=2.0,
-        cputime=2.0,
+        cputime=4.0,
         gputime=2.0,
         memtime=32.0,
         node="node01",
@@ -140,7 +149,7 @@ def test_energy_calculate() -> None:
         per_gb_power_watts=2.0,
     )
 
-    expected = ((10.0 * 2.0) + (200.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
+    expected = ((10.0 * 4.0) + (200.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
     result = job.calculate_energy(node, 1.5)
 
     assert np.isclose(result, expected, atol=1e-9)
@@ -150,9 +159,13 @@ def test_energy_calculate_no_gpu() -> None:
     """Test energy calculation with GPU."""
     job = Job(
         id="12345",
+        owner="testuser",
+        cpurequest=2,
+        gpurequest=0,
+        memrequest=16,
         starttime=datetime(2025, 8, 21, 10, 0, 0),
         runtime=2.0,
-        cputime=2.0,
+        cputime=4.0,
         gputime=0.0,
         memtime=32.0,
         node="node01",
@@ -167,7 +180,7 @@ def test_energy_calculate_no_gpu() -> None:
         per_gb_power_watts=2.0,
     )
 
-    expected = ((10.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
+    expected = ((10.0 * 4.0) + (32.0 * 2.0)) * 1.5 / 1000.0
     result = job.calculate_energy(node, 1.5)
 
     assert np.isclose(result, expected, atol=1e-9)

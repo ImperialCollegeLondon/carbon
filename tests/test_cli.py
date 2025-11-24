@@ -19,7 +19,11 @@ def make_result(job_id: str) -> RunResult:
     """
     job = Job(
         id=job_id,
+        owner="testuser",
         starttime=datetime(2025, 10, 26, 23, 43, 39),
+        cpurequest=100,
+        gpurequest=0,
+        memrequest=100,
         runtime=1.0,
         cputime=100.0,
         gputime=0.0,

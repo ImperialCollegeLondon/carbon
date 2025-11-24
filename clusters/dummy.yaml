@@ -12,10 +12,11 @@ memory:
     per_gb_power_watts: 0.3725
 dummy_job:
   start_time: '2025-07-09T12:00:00'  # Example start time in ISO format
-  cpu_time: 192.0       # in cpu-hours
-  memory_usage: 12.0    # in GB
   run_time: 24.0        # in hours
+  cpu_time: 192.0       # in cpu-hours
+  ncpus: 8.0
   ngpus: 1
+  memory: 12.0    # in GB
   node: dummy_node
   cpu_type: rome
   gpu_type: RTX6000
