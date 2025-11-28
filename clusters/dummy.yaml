@@ -10,11 +10,12 @@ gpus:
 memory:
   common:
     per_gb_power_watts: 0.3725
-dummy_job:
-  start_time: '2025-07-09T12:00:00'  # Example start time in ISO format
-  cpu_time: 192.0       # in cpu-hours
-  memory_usage: 12.0    # in GB
-  run_time: 24.0        # in hours
+scheduler: dummy
+scheduler_config:
+  start_time: '2025-07-09T12:00:00' # Example start time in ISO format
+  cpu_time: 192.0 # in cpu-hours
+  memory_usage: 12.0 # in GB
+  run_time: 24.0 # in hours
   ngpus: 1
   node: dummy_node
   cpu_type: rome

@@ -50,6 +50,7 @@ def test_multiple_jobs_split_results() -> None:
     cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
 
     runner = CliRunner()
+    job_ids = ["1234", "5678"]
     res = runner.invoke(
         main,
         [
@@ -57,14 +58,14 @@ def test_multiple_jobs_split_results() -> None:
             cfg_path,
             "--default_intensity",
             "--split_jobs",
-            "1234",
-            "5678",
+            *job_ids,
         ],
     )
     assert res.exit_code == 0
     out = res.output
-    # The dummy job id is used for each entry; ensure exactly two blocks printed
-    assert out.count("Job ID: dummy_job") == 2
+    # Ensure we get output for each job
+    for job_id in job_ids:
+        assert f"Job ID: {job_id}" in out
     assert (
         out.count(
             "Estimated energy consumed from 192.00 CPU-hours "

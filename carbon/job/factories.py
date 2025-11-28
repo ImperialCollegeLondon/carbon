@@ -1,25 +1,15 @@
-"""The job module.
-
-This module provides functionality for processing and representing a compute job,
-including parsing job data from a scheduler, converting time formats, and calculating
-the electrical energy consumed by the job.
-"""
+"""Job factory base class and dummy implementation."""
 
 import json
 import re
 import subprocess
+from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
-from typing import Self
+from typing import Any, Protocol, Self
 
-from carbon.node import Node
-
-# Pre-compile regular expressions for performance.
-# These patterns are used during job id validation.
-JOB_ID_RE = re.compile(r"^\d+(\[\d+\])?(?:..*)?$")
-SUBJOB_ID_RE = re.compile(r"^\d+\[\d+\](?:..*)?$")
-ARRAY_ID_RE = re.compile(r"^\d+\[\](?:..*)?$")
+from ..clusterconfig import DummySchedulerConfig
+from .job import Job, JobState
 
 
 class UnknownJobIDError(ValueError):
@@ -59,12 +49,103 @@ class MissingJobDataError(ValueError):
     pass
 
 
-class JobState(Enum):
-    """Enumeration of supported job states."""
+class JobFactory(Protocol):
+    """Abstract base class for job factories."""
 
-    FINISHED = "F"
-    RUNNING = "R"
-    EXPIRED = "X"
+    @classmethod
+    @abstractmethod
+    def from_config(cls, config: dict[str, Any]) -> Self:  # type: ignore[explicit-any]
+        """Create an instance of the class from configuration data."""
+
+    @abstractmethod
+    def is_array(self, job_id: str) -> bool:
+        """Check if the job ID corresponds to an array job.
+
+        Args:
+            job_id (str): The job ID to check.
+
+        Returns:
+            bool: True if the job ID is for an array job, False otherwise.
+        """
+
+    @abstractmethod
+    def split_sub_jobs(self, job_id: str) -> list[str]:
+        """Split an array job ID into its sub-job IDs.
+
+        Args:
+            job_id (str): The array job ID to split.
+
+        Returns:
+            list[str]: A list of sub-job IDs.
+        """
+
+    @abstractmethod
+    def create(cls, job_ids: list[str], ignore_failed: bool = False) -> list[Job]:
+        """Create multiple Job instances from a list of job IDs.
+
+        Args:
+            job_ids (list[str]): A list of job IDs.
+            ignore_failed (bool): Whether to ignore failed job creations.
+        """
+
+
+@dataclass
+class DummyJobFactory(JobFactory):
+    """A dummy job factory for demonstration purposes."""
+
+    start_time: datetime
+    run_time: float
+    cpu_time: float
+    ngpus: int
+    memory_usage: float
+    node: str
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> Self:  # type: ignore[explicit-any]
+        """Initialize from configuration data."""
+        validated_config = DummySchedulerConfig(**config)
+        return cls(
+            start_time=validated_config.start_time,
+            run_time=validated_config.run_time,
+            cpu_time=validated_config.cpu_time,
+            ngpus=validated_config.ngpus,
+            memory_usage=validated_config.memory_usage,
+            node=validated_config.node,
+        )
+
+    def is_array(self, job_id: str) -> bool:
+        """Check if the job ID corresponds to an array job.
+
+        For dummy purposes array jobs are not supported.
+        """
+        return False
+
+    def split_sub_jobs(self, job_id: str) -> list[str]:
+        """Return the sub-job IDs for an array job.
+
+        Raises NotImplementedError as array jobs are not supported.
+        """
+        raise NotImplementedError("Array jobs are not supported in DummyJobFactory.")
+
+    def create(self, job_ids: list[str], ignore_failed: bool = False) -> list[Job]:
+        """Create dummy Job instances for the given job IDs.
+
+        Args:
+            job_ids (list[str]): The job identifiers to create.
+            ignore_failed (bool): Ignored in this dummy implementation.
+        """
+        return [
+            Job(
+                id=job_id,
+                starttime=self.start_time,
+                runtime=self.run_time,
+                cputime=self.cpu_time,
+                gputime=self.ngpus * self.run_time,
+                memtime=self.memory_usage * self.run_time,
+                node=self.node,
+            )
+            for job_id in job_ids
+        ]
 
 
 def hours(time: str) -> float:
@@ -80,44 +161,28 @@ def hours(time: str) -> float:
     return float(h) + float(m) / 60.0 + float(s) / 3600.0
 
 
+PBS_JOB_ID_RE = re.compile(r"^\d+(\[\d+\])?(?:..*)?$")
+PBS_SUBJOB_ID_RE = re.compile(r"^\d+\[\d+\](?:..*)?$")
+PBS_ARRAY_ID_RE = re.compile(r"^\d+\[\](?:..*)?$")
+
+
 @dataclass
-class Job:
-    """Represents a compute job, including its resource usage and timing information."""
-
-    id: str
-    """The job identifier."""
-
-    starttime: datetime
-    """The start time of the job."""
-
-    runtime: float
-    """The total runtime of the job in hours."""
-
-    cputime: float
-    """The total CPU time used by the job in core-hours."""
-
-    gputime: float
-    """The total GPU time used by the job in component-hours."""
-
-    memtime: float
-    """The total memory-time allocated to the job in GB-hours."""
-
-    node: str
-    """The node the job was executed on."""
-
-    state: JobState = JobState.FINISHED
-    """The state of the job."""
+class PBSJobFactory(JobFactory):
+    """A job factory for PBS scheduler."""
 
     @classmethod
-    def is_array(cls, job_id: str) -> bool:
-        """Is it a PBS array job?"""
+    def from_config(cls, config: dict[str, Any]) -> Self:  # type: ignore[explicit-any]
+        """Initialize the PBS job factory."""
+        return cls()
+
+    def is_array(self, job_id: str) -> bool:
+        """Check if the job ID corresponds to an array job."""
         return job_id.split(".")[0].endswith("[]")
 
-    @classmethod
-    def split_sub_jobs(cls, job_id: str) -> list[str]:
+    def split_sub_jobs(self, job_id: str) -> list[str]:
         """Split a PBS array job id into the corresponding list of subjob ids."""
         # Job ID for array should be digits followed by square brackets
-        if not ARRAY_ID_RE.fullmatch(job_id):
+        if not PBS_ARRAY_ID_RE.fullmatch(job_id):
             raise MalformedJobIDError(
                 f"Malformed array job ID: {job_id}. Should contain only digits, "
                 "followed by square brackets"
@@ -150,18 +215,17 @@ class Job:
             state = items[4]
             # Get all the subjobs which are running, finished, or expired (finished but
             # other subjobs are still running).
-            if SUBJOB_ID_RE.fullmatch(label) and state in JobState:
+            if PBS_SUBJOB_ID_RE.fullmatch(label) and state in JobState:
                 # Add subjobs without server label to improve consistency
                 sub_jobs.append(label.split(".")[0])
 
         return sub_jobs
 
-    @classmethod
-    def from_PBS(cls, ids: list[str], ignore_failed: bool = False) -> list[Self]:
+    def create(self, job_ids: list[str], ignore_failed: bool = False) -> list[Job]:
         """Create a list of Job objects by fetching data from PBS for multiple job IDs.
 
         Args:
-            ids (list[str]): The job identifiers to fetch from the scheduler.
+            job_ids (list[str]): The job identifiers to fetch from the scheduler.
             ignore_failed (bool): If True, don't crash out when jobs cannot be parsed
                 but don't add to the job list.
 
@@ -176,10 +240,11 @@ class Job:
             MalformedJobIDError: If some of the job IDs are not formatted correctly.
             JobStateError: If some of the jobs are in an invalid state.
             NotImplementedError: If the memory format is not supported.
+            MissingJobDataError: If expected job data is missing.
         """
         malformed_ids = []
-        for id in ids:
-            if not JOB_ID_RE.fullmatch(id):
+        for id in job_ids:
+            if not PBS_JOB_ID_RE.fullmatch(id):
                 malformed_ids.append(id)
         if malformed_ids and not ignore_failed:
             raise MalformedJobIDError(
@@ -190,12 +255,12 @@ class Job:
             )
         elif malformed_ids and ignore_failed:
             # Remove malformed ids from the list of ids
-            ids = [id for id in ids if id not in malformed_ids]
+            job_ids = [id for id in job_ids if id not in malformed_ids]
 
-        if not ids:
+        if not job_ids:
             return []
 
-        cmd = "qstat -xfF json " + " ".join(ids)
+        cmd = "qstat -xfF json " + " ".join(job_ids)
 
         # Placeholder for storing partial stdout if subprocess raises and ignore_failed
         # is True.
@@ -241,7 +306,7 @@ class Job:
         job_data = json.loads(stdout)
 
         if not job_data or "Jobs" not in job_data.keys():
-            raise MissingJobDataError(f"No job data found for ID(s): {ids}")
+            raise MissingJobDataError(f"No job data found for ID(s): {job_ids}")
 
         job_list = []
         for internal_id in job_data["Jobs"]:
@@ -292,7 +357,7 @@ class Job:
                 # Create a Job object with the fetched data
                 # and append to the job_list
                 job_list.append(
-                    cls(
+                    Job(
                         id=internal_id,
                         starttime=starttime,
                         runtime=runtime,
@@ -309,23 +374,3 @@ class Job:
                 else:
                     raise MissingJobDataError(f"Missing expected job data: {e}")
         return job_list
-
-    def calculate_energy(self, node: Node, pue: float) -> float:
-        """Calculate energy consumption in kilowatt-hours for a compute job.
-
-        Args:
-            node (Node): The compute node the job was executed on.
-            pue (float): Power Usage Effectiveness of the data center.
-
-        Returns:
-            float: The energy consumed in kilowatt-hours.
-        """
-        return (
-            (
-                node.per_core_power_watts * self.cputime
-                + node.per_gpu_power_watts * self.gputime
-                + node.per_gb_power_watts * self.memtime
-            )
-            * pue
-            / 1000.0
-        )

@@ -8,7 +8,8 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pytest
 
-from carbon.job import Job, UnknownJobIDError, hours
+from carbon.job import Job, UnknownJobIDError
+from carbon.job.factories import PBSJobFactory, hours
 from carbon.node import Node
 
 
@@ -46,12 +47,14 @@ def test_from_PBS_bulk_ignore_failed_true(monkeypatch) -> None:
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    jobs = Job.from_PBS(["123", "456"], ignore_failed=True)
+    factory = PBSJobFactory()
+    jobs = factory.create(["123", "456"], ignore_failed=True)
+
     assert len(jobs) == 1
     assert jobs[0].id == "123"
 
 
-def test_from_PBS_bulk_ignore_failed_false_raises(monkeypatch) -> None:
+def test_pbs_factory_bulk_ignore_failed_false_raises(monkeypatch) -> None:
     """Verify an error is raised when ignore_failed is False and qstat fails."""
     # partial_bytes = json.dumps(_partial_job_json()).encode()
 
@@ -65,21 +68,24 @@ def test_from_PBS_bulk_ignore_failed_false_raises(monkeypatch) -> None:
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
+    factory = PBSJobFactory()
     with pytest.raises(UnknownJobIDError):
-        Job.from_PBS(["123", "456"], ignore_failed=False)
+        factory.create(["123", "456"], ignore_failed=False)
 
 
 @pytest.mark.parametrize(
     "isMPIjob, first_node_name",
     [(False, "cx3-3-0"), (True, "cx3-3-1")],
 )
-def test_fromPBS_parse_job(isMPIjob: bool, first_node_name: str) -> None:
+def test_pbs_job_factory_parse_job(isMPIjob: bool, first_node_name: str) -> None:
     """Job.fromPBS parses qstat JSON and returns a Job with expected fields."""
     mock_proc = Mock()
     mock_proc.stdout = _make_PBSjob_json("12345", isMPIjob)
 
-    with patch("carbon.job.subprocess.run", return_value=mock_proc):
-        job = Job.from_PBS(["12345"])[0]
+    factory = PBSJobFactory()
+    with patch("carbon.job.factories.subprocess.run", return_value=mock_proc):
+        job = factory.create(["12345"])[0]
+
     assert job.id == "12345"
     assert job.starttime == datetime.strptime(
         "Wed Jul 09 12:00:00 2025", "%a %b %d %H:%M:%S %Y"

@@ -1,11 +1,12 @@
 """Configuration schema for an HPC cluster and its power usage characteristics."""
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat
 
 
-class DummyJob(BaseModel):
+class DummySchedulerConfig(BaseModel):
     """Optional dummy job specification for testing and development purposes.
 
     Attributes:
@@ -31,7 +32,7 @@ class DummyJob(BaseModel):
     mem_type: str
 
 
-class ClusterConfig(BaseModel):
+class ClusterConfig(BaseModel):  # type: ignore[explicit-any]
     """Configuration for an HPC cluster and hosting data center.
 
     Attributes:
@@ -41,7 +42,8 @@ class ClusterConfig(BaseModel):
         cpus (dict): Dictionary of CPU types and their power usage.
         gpus (dict): Dictionary of GPU types and their power usage.
         memory (dict): Dictionary with memory types and their power usage.
-        dummy_job (DummyJob | None): Optional dummy job specification.
+        scheduler (str): Scheduler type used by the cluster.
+        scheduler_config (dict): Scheduler-specific configuration parameters.
     """
 
     cluster_name: str
@@ -50,4 +52,5 @@ class ClusterConfig(BaseModel):
     cpus: dict[str, dict[str, float]]
     gpus: dict[str, dict[str, float]]
     memory: dict[str, dict[str, float]]
-    dummy_job: DummyJob | None = None
+    scheduler: str
+    scheduler_config: dict[str, Any]  # type: ignore[explicit-any]
