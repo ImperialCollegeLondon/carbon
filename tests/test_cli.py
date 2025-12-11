@@ -55,7 +55,7 @@ def test_cli_split_jobs_prints_each(monkeypatch) -> None:
         job_factory,
         pue,
         region_id,
-        default_intensity,
+        average_intensity,
         ignore_failed,
     ) -> list[RunResult]:
         return [make_result("jobA"), make_result("jobB")]
@@ -89,7 +89,7 @@ def test_cli_aggregate_prints_aggregate(monkeypatch) -> None:
         job_factory,
         pue,
         region_id,
-        default_intensity,
+        average_intensity,
         ignore_failed,
     ) -> list[RunResult]:
         return results
