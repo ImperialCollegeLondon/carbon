@@ -36,7 +36,7 @@ def get_job_factory_classes() -> dict[str, type[JobFactory]]:
     help="Compare the carbon emissions of the compute job with other activities.",
 )
 @click.option(
-    "--config_path",
+    "--config-path",
     envvar="CARBON_CONFIG",
     type=click.Path(),
     help="Path to the cluster configuration file.",
@@ -47,13 +47,13 @@ def get_job_factory_classes() -> dict[str, type[JobFactory]]:
     help="Use the UK average value for the carbon intensity (137 gCO2/kWh)",
 )
 @click.option(
-    "--split_jobs",
+    "--split-jobs",
     is_flag=True,
     help="Show separate results for each job when multiple IDs are input. "
     "Without this flag, only the aggregate of the jobs is displayed.",
 )
 @click.option(
-    "--ignore_failed",
+    "--ignore-failed",
     is_flag=True,
     help="Quietly ignore jobs that couldn't be parsed or analysed correctly. "
     "Useful when analysing large batches of jobs.",

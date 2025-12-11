@@ -13,7 +13,7 @@ def test_single_job() -> None:
 
     runner = CliRunner()
     res = runner.invoke(
-        main, ["--config_path", cfg_path, "--average-intensity", "1234"]
+        main, ["--config-path", cfg_path, "--average-intensity", "1234"]
     )
     assert res.exit_code == 0
     out = res.output
@@ -33,7 +33,7 @@ def test_multiple_jobs_aggregate() -> None:
 
     runner = CliRunner()
     res = runner.invoke(
-        main, ["--config_path", cfg_path, "--average-intensity", "1234", "5678"]
+        main, ["--config-path", cfg_path, "--average-intensity", "1234", "5678"]
     )
     assert res.exit_code == 0
     out = res.output
@@ -54,10 +54,10 @@ def test_multiple_jobs_split_results() -> None:
     res = runner.invoke(
         main,
         [
-            "--config_path",
+            "--config-path",
             cfg_path,
             "--average-intensity",
-            "--split_jobs",
+            "--split-jobs",
             *job_ids,
         ],
     )

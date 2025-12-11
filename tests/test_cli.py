@@ -66,7 +66,7 @@ def test_cli_split_jobs_prints_each(monkeypatch) -> None:
     runner = CliRunner()
     # Ensure options (config) come before positional args to avoid parsing issues
     res = runner.invoke(
-        main, ["--config_path", cfg_path, "--split_jobs", "jobA", "jobB"]
+        main, ["--config-path", cfg_path, "--split-jobs", "jobA", "jobB"]
     )
     assert res.exit_code == 0
     out = res.output
@@ -97,7 +97,7 @@ def test_cli_aggregate_prints_aggregate(monkeypatch) -> None:
     monkeypatch.setattr("carbon.__main__.run", fake_run)
 
     runner = CliRunner()
-    res = runner.invoke(main, ["--config_path", cfg_path, "jobA", "jobB"])
+    res = runner.invoke(main, ["--config-path", cfg_path, "jobA", "jobB"])
     assert res.exit_code == 0
     out = res.output
     assert "Aggregating estimates over multiple jobs." in out
