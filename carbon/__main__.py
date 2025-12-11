@@ -36,24 +36,24 @@ def get_job_factory_classes() -> dict[str, type[JobFactory]]:
     help="Compare the carbon emissions of the compute job with other activities.",
 )
 @click.option(
-    "--config_path",
+    "--config-path",
     envvar="CARBON_CONFIG",
     type=click.Path(),
     help="Path to the cluster configuration file.",
 )
 @click.option(
-    "--default_intensity",
+    "--average-intensity",
     is_flag=True,
-    help="Use a default value for the carbon intensity (137 gCO2/kWh)",
+    help="Use the UK average value for the carbon intensity (137 gCO2/kWh)",
 )
 @click.option(
-    "--split_jobs",
+    "--split-jobs",
     is_flag=True,
     help="Show separate results for each job when multiple IDs are input. "
     "Without this flag, only the aggregate of the jobs is displayed.",
 )
 @click.option(
-    "--ignore_failed",
+    "--ignore-failed",
     is_flag=True,
     help="Quietly ignore jobs that couldn't be parsed or analysed correctly. "
     "Useful when analysing large batches of jobs.",
@@ -64,7 +64,7 @@ def main(
     compare: bool,
     verbose: bool,
     config_path: str,
-    default_intensity: bool,
+    average_intensity: bool,
     split_jobs: bool,
     ignore_failed: bool,
 ) -> None:
@@ -76,7 +76,7 @@ def main(
         compare (bool): If True, compare emissions to other activities.
         verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
-        default_intensity (bool): If True, use a default carbon intensity value.
+        average_intensity (bool): If True, use a hardcoded carbon intensity value.
         split_jobs (bool): If True, show separate results for each job when multiple IDs
             provided.
         ignore_failed (bool): If True, quietly ignore jobs that can't be parsed or
@@ -140,7 +140,7 @@ def main(
             job_factory,
             config.pue,
             config.region_id,
-            default_intensity,
+            average_intensity,
             ignore_failed,
         )
         failed_count = len(job_ids) - len(results)
@@ -181,10 +181,10 @@ def main(
     elif split_jobs:
         for result in results:
             print(f"Job ID: {result.job.id}")
-            output_result(result, compare, verbose, default_intensity, config)
+            output_result(result, compare, verbose, average_intensity, config)
             print("")
     elif len(results) == 1:
-        output_result(results[0], compare, verbose, default_intensity, config)
+        output_result(results[0], compare, verbose, average_intensity, config)
     else:
         # Aggregate estimates over multiple jobs
         intensity_list = []
@@ -233,14 +233,14 @@ def main(
             job=agg_job,
             carbon_intensity=sum(intensity_list) / len(intensity_list),
         )
-        output_result(agg_result, compare, verbose, default_intensity, config, True)
+        output_result(agg_result, compare, verbose, average_intensity, config, True)
 
 
 def output_result(
     result: RunResult,
     compare: bool,
     verbose: bool,
-    default_intensity: bool,
+    average_intensity: bool,
     config: ClusterConfig,
     isaggregate: bool = False,
 ) -> None:
@@ -250,7 +250,7 @@ def output_result(
         result (RunResult): The result to display
         compare (bool): If True, compare emissions to other activities.
         verbose (bool): If True, provide verbose output.
-        default_intensity (bool): If True, indicate that default carbon intensity value
+        average_intensity (bool): If True, indicate that default carbon intensity value
             was used.
         config (ClusterConfig): The cluster configuration.
         isaggregate (bool): If True, show average carbon intensity.
@@ -299,7 +299,7 @@ def output_result(
         f"and {job.memtime:.2f} GB-hours "
         f"is {energy_consumed:.2f} kWh"
     )
-    if default_intensity:
+    if average_intensity:
         print(f"Using UK average carbon intensity of {intensity} gCO2/kWh")
     elif isaggregate:
         print(f"Average carbon intensity across multiple jobs is {intensity} gCO2/kWh")

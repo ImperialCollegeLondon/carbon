@@ -8,17 +8,17 @@ from carbon.__main__ import main
 
 
 def test_single_job() -> None:
-    """A single-job run with --default_intensity prints usable details."""
+    """A single-job run with --average-intensity prints usable details."""
     cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
 
     runner = CliRunner()
     res = runner.invoke(
-        main, ["--config_path", cfg_path, "--default_intensity", "1234"]
+        main, ["--config-path", cfg_path, "--average-intensity", "1234"]
     )
     assert res.exit_code == 0
     out = res.output
     assert "Job run on node: dummy_node" in out
-    # default_intensity should trigger the UK-average intensity message
+    # average-intensity flag should trigger the UK-average intensity message
     assert "Using UK average carbon intensity of 137.0 gCO2/kWh" in out
     assert (
         "Estimated energy consumed from 192.00 CPU-hours "
@@ -33,7 +33,7 @@ def test_multiple_jobs_aggregate() -> None:
 
     runner = CliRunner()
     res = runner.invoke(
-        main, ["--config_path", cfg_path, "--default_intensity", "1234", "5678"]
+        main, ["--config-path", cfg_path, "--average-intensity", "1234", "5678"]
     )
     assert res.exit_code == 0
     out = res.output
@@ -54,10 +54,10 @@ def test_multiple_jobs_split_results() -> None:
     res = runner.invoke(
         main,
         [
-            "--config_path",
+            "--config-path",
             cfg_path,
-            "--default_intensity",
-            "--split_jobs",
+            "--average-intensity",
+            "--split-jobs",
             *job_ids,
         ],
     )

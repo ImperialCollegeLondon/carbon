@@ -29,7 +29,7 @@ def run(
     job_factory: JobFactory,
     pue: float,
     region_id: int,
-    default_intensity: bool,
+    average_intensity: bool,
     ignore_failed: bool,
 ) -> list[RunResult]:
     """Estimate the carbon emissions of compute jobs.
@@ -40,7 +40,7 @@ def run(
         job_factory (JobFactory): The class used to construct job objects.
         pue (float): Power Usage Effectiveness of the data center.
         region_id (int): Region ID for carbon intensity API (1-17)
-        default_intensity (bool): If True, use a default carbon intensity value.
+        average_intensity (bool): If True, use a default carbon intensity value.
         ignore_failed (bool): If True, don't crash out when jobs cannot be parsed or
             analysed and don't add respective results to the results list.
 
@@ -69,8 +69,8 @@ def run(
         # Calculate energy consumption
         energy_consumed = job.calculate_energy(node, pue)
 
-        # Fetch carbon intensity at job start time or use a default value
-        if default_intensity:
+        # Fetch carbon intensity at job start time or use a hardcoded value
+        if average_intensity:
             intensity = 137.0  # gCO2/kWh, UK average over 2023 and 2024
         else:
             carbon_intensity = CarbonIntensity(job.starttime, region_id)
