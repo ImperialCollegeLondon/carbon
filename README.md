@@ -2,7 +2,14 @@
 
 Estimates carbon emissions of compute jobs run on high-performance computing clusters.
 
-This tool has been developed for use on Imperial College London's compute clusters. However, the structure of the code has been designed with the view of potential extension for use on other clusters.
+The tool estimates the energy consumption of a job using information gathered from the workload scheduler.
+Since it has been developed for use at Imperial College London,
+it is currently set up to communicate with the scheduler in use on Imperial's clusters, PBS Professional v2024.1.
+However, the structure of the code has been designed with the view of potential extension for use on other clusters
+and with other workload schedulers.
+
+By default, the tool requires an internet connection in order to request data from the [NESO's carbon intensity API](https://carbonintensity.org.uk/).
+If required, this request can be skipped in favour of a hardcoded carbon intensity value using the `--average-intensity` flag.
 
 ## For developers
 
