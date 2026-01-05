@@ -43,11 +43,15 @@ class CarbonIntensity:
             ValueError: If the API request fails or returns an error status.
         """
         headers = {"Accept": "application/json"}
-        response = requests.get(
-            f"https://api.carbonintensity.org.uk/regional/intensity/{self._stime}/{self._stime_plus}/regionid/{self.region_id}",
-            params={},
-            headers=headers,
-        )
+        try:
+            response = requests.get(
+                f"https://api.carbonintensity.org.uk/regional/intensity/{self._stime}/{self._stime_plus}/regionid/{self.region_id}",
+                params={},
+                headers=headers,
+                timeout=5,
+            )
+        except requests.RequestException as e:
+            raise ValueError(f"Error fetching carbon intensity data: {e}") from e
 
         if response.status_code != 200:
             raise ValueError(
