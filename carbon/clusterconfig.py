@@ -1,6 +1,7 @@
 """Configuration schema for an HPC cluster and its power usage characteristics."""
 
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat
@@ -30,6 +31,16 @@ class DummySchedulerConfig(BaseModel):
     cpu_type: str
     gpu_type: str | None = None
     mem_type: str
+
+
+class FileSchedulerConfig(BaseModel):
+    """File-based scheduler configuration.
+
+    Attributes:
+        node_data_file_path (str): Path to the file containing node data.
+    """
+
+    node_data_file_path: Path
 
 
 class ClusterConfig(BaseModel):  # type: ignore[explicit-any]

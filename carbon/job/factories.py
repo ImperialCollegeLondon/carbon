@@ -8,6 +8,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Protocol, Self
 
+import pydantic
+import yaml
+
 from ..clusterconfig import DummySchedulerConfig
 from .job import Job, JobState
 
@@ -374,3 +377,69 @@ class PBSJobFactory(JobFactory):
                 else:
                     raise MissingJobDataError(f"Missing expected job data: {e}")
         return job_list
+
+
+class FileJobFactory(JobFactory):
+    """A job factory that reads job data from YAML files."""
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> Self:  # type: ignore[explicit-any]
+        """Initialize the File job factory."""
+        # no config used currently
+        return cls()
+
+    def is_array(self, job_id: str) -> bool:
+        """Check if the job ID corresponds to an array job.
+
+        For file-based jobs array jobs are not supported.
+        """
+        return False
+
+    def split_sub_jobs(self, job_id: str) -> list[str]:
+        """Return the sub-job IDs for an array job.
+
+        Raises NotImplementedError as array jobs are not supported.
+        """
+        raise NotImplementedError("Array jobs are not supported in FileJobFactory.")
+
+    class FileJobModel(pydantic.BaseModel):
+        """Pydantic model for file-based job data."""
+
+        model_config = pydantic.ConfigDict(use_enum_values=True)
+
+        id: str
+        starttime: datetime
+        runtime: float
+        cputime: float
+        ngpus: float
+        memory: float
+        node: str
+        state: JobState
+
+    def create(self, job_ids: list[str], ignore_failed: bool = False) -> list[Job]:
+        """Create Job instances from YAML files.
+
+        Args:
+            job_ids (list[str]): Interpreted as file paths to YAML files.
+            ignore_failed (bool): Ignored in this implementation.
+
+        Returns:
+            list[Job]: A list of Job instances created from the files.
+        """
+        jobs = []
+        for job_id in job_ids:
+            with open(job_id) as f:
+                job_data = self.FileJobModel(**yaml.safe_load(f))
+            jobs.append(
+                Job(
+                    id=job_data.id,
+                    starttime=job_data.starttime,
+                    runtime=job_data.runtime,
+                    cputime=job_data.cputime,
+                    gputime=job_data.ngpus * job_data.runtime,
+                    memtime=job_data.memory * job_data.runtime,
+                    node=job_data.node,
+                    state=job_data.state,
+                )
+            )
+        return jobs

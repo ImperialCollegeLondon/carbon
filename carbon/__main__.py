@@ -11,8 +11,18 @@ import click
 
 from carbon import RunResult, run
 from carbon.clusterconfig import ClusterConfig
-from carbon.job.factories import DummyJobFactory, JobFactory, PBSJobFactory
-from carbon.node.factories import DummyNodeFactory, NodeFactory, PBSNodeFactory
+from carbon.job.factories import (
+    DummyJobFactory,
+    FileJobFactory,
+    JobFactory,
+    PBSJobFactory,
+)
+from carbon.node.factories import (
+    DummyNodeFactory,
+    FileNodeFactory,
+    NodeFactory,
+    PBSNodeFactory,
+)
 
 
 def get_node_factory_classes() -> dict[str, type[NodeFactory]]:
@@ -20,12 +30,12 @@ def get_node_factory_classes() -> dict[str, type[NodeFactory]]:
     # here is where you can do dynamic import gubbins to allow users to supply
     # their own node factory classes
     # for now, just return the built-in ones
-    return dict(dummy=DummyNodeFactory, pbs=PBSNodeFactory)
+    return dict(dummy=DummyNodeFactory, pbs=PBSNodeFactory, file=FileNodeFactory)
 
 
 def get_job_factory_classes() -> dict[str, type[JobFactory]]:
     """Get available job factory classes."""
-    return dict(dummy=DummyJobFactory, pbs=PBSJobFactory)
+    return dict(dummy=DummyJobFactory, pbs=PBSJobFactory, file=FileJobFactory)
 
 
 @click.command()

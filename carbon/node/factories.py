@@ -3,9 +3,13 @@
 import subprocess
 from abc import abstractmethod
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol, Self
 
-from ..clusterconfig import DummySchedulerConfig
+import pydantic
+import yaml
+
+from ..clusterconfig import DummySchedulerConfig, FileSchedulerConfig
 from .node import Node
 
 ComponentPower = dict[str, dict[str, dict[str, float]]]
@@ -31,6 +35,60 @@ class NodeFactory(Protocol):
     @abstractmethod
     def create(self, node_labels: list[str]) -> list[Node]:
         """Abstract method to create multiple Node objects."""
+
+    def _make_node(
+        self,
+        name: str,
+        cpu_type: str,
+        gpu_type: str | None,
+        mem_type: str,
+        component_powers: ComponentPower,
+    ) -> Node:
+        """Create a Node object given hardware types.
+
+        Args:
+            name (str): The node label.
+            cpu_type (str): The CPU model.
+            gpu_type (str | None): The GPU model, or None if not present.
+            mem_type (str): The memory type.
+            component_powers (dict): Dictionary of power usages for components.
+
+        Returns:
+            Node: An instance of Node with hardware and power info.
+        """
+        try:
+            per_core_power_watts = component_powers["cpus"][cpu_type][
+                "per_core_power_watts"
+            ]
+        except KeyError:
+            raise ValueError(f"CPU type '{cpu_type}' not found in cluster config.")
+
+        if gpu_type is None:
+            per_gpu_power_watts = 0.0
+        else:
+            try:
+                per_gpu_power_watts = component_powers["gpus"][gpu_type][
+                    "per_gpu_power_watts"
+                ]
+            except KeyError:
+                raise ValueError(f"GPU type '{gpu_type}' not found in cluster config.")
+
+        try:
+            per_gb_power_watts = component_powers["memory"][mem_type][
+                "per_gb_power_watts"
+            ]
+        except KeyError:
+            raise ValueError(f"Memory type '{mem_type}' not found in cluster config.")
+
+        return Node(
+            name=name,
+            cpu_type=cpu_type,
+            gpu_type=gpu_type,
+            mem_type=mem_type,
+            per_core_power_watts=per_core_power_watts,
+            per_gpu_power_watts=per_gpu_power_watts,
+            per_gb_power_watts=per_gb_power_watts,
+        )
 
 
 @dataclass
@@ -73,32 +131,13 @@ class DummyNodeFactory(NodeFactory):
         Returns:
             Node: An instance of Node with dummy hardware and power info.
         """
-        cpu_type = self.cpu_type
-        per_core_power_watts = self.component_powers["cpus"][cpu_type][
-            "per_core_power_watts"
-        ]
-        gpu_type = self.gpu_type
-        if gpu_type:
-            per_gpu_power_watts = self.component_powers["gpus"][gpu_type][
-                "per_gpu_power_watts"
-            ]
-        else:
-            per_gpu_power_watts = 0.0
-
-        mem_type = self.mem_type
-        per_gb_power_watts = self.component_powers["memory"][mem_type][
-            "per_gb_power_watts"
-        ]
-
         return [
-            Node(
+            self._make_node(
                 name=node,
-                cpu_type=cpu_type,
-                gpu_type=gpu_type,
-                mem_type=mem_type,
-                per_core_power_watts=per_core_power_watts,
-                per_gpu_power_watts=per_gpu_power_watts,
-                per_gb_power_watts=per_gb_power_watts,
+                cpu_type=self.cpu_type,
+                gpu_type=self.gpu_type,
+                mem_type=self.mem_type,
+                component_powers=self.component_powers,
             )
             for node in node_labels
         ]
@@ -159,47 +198,78 @@ class PBSNodeFactory(NodeFactory):
                         val = line.split("=")[-1].strip()
                         gpu_type = val if val != "None" else None
 
-            # Look up power usage for cpu/gpu/memory
-            try:
-                per_core_power_watts = self.component_powers["cpus"][cpu_type][
-                    "per_core_power_watts"
-                ]
-            except KeyError:
-                raise ValueError(f"CPU type '{cpu_type}' not found in cluster config.")
-
-            if gpu_type:
-                try:
-                    per_gpu_power_watts = self.component_powers["gpus"][gpu_type][
-                        "per_gpu_power_watts"
-                    ]
-                except KeyError:
-                    raise ValueError(
-                        f"GPU type '{gpu_type}' not found in cluster config."
-                    )
-            else:
-                per_gpu_power_watts = 0.0
-
-            try:
-                per_gb_power_watts = self.component_powers["memory"][mem_type][
-                    "per_gb_power_watts"
-                ]
-            except KeyError:
-                raise ValueError(
-                    f"Memory type '{mem_type}' not found in cluster config."
-                )
-
             if cpu_type is None or cpu_type == "":
                 raise ValueError(f"Could not determine cpu_type for node {node_label}")
 
             node_list.append(
-                Node(
+                self._make_node(
                     name=node_label,
                     cpu_type=cpu_type,
                     gpu_type=gpu_type,
                     mem_type=mem_type,
-                    per_core_power_watts=per_core_power_watts,
-                    per_gpu_power_watts=per_gpu_power_watts,
-                    per_gb_power_watts=per_gb_power_watts,
+                    component_powers=self.component_powers,
                 )
             )
         return node_list
+
+
+@dataclass
+class FileNodeFactory(NodeFactory):
+    """Factory for creating Node objects by querying PBS."""
+
+    component_powers: ComponentPower
+    node_data_file_path: Path
+
+    @classmethod
+    def from_config(  # type: ignore[explicit-any]
+        cls,
+        config: dict[str, Any],
+        component_powers: ComponentPower,
+    ) -> Self:
+        """Initialize the DummyNodeFactory with a config.
+
+        Args:
+            config (dict): Configuration dictionary.
+            component_powers (dict): Dictionary of power usages for components.
+        """
+        validated_config = FileSchedulerConfig(**config)
+
+        return cls(
+            component_powers=component_powers,
+            node_data_file_path=validated_config.node_data_file_path,
+        )
+
+    class NodeDataModel(pydantic.BaseModel):
+        """Pydantic model for node data in file."""
+
+        cpu_type: str
+        gpu_type: str | None = None
+        mem_type: str
+
+    def create(self, node_labels: list[str]) -> list[Node]:
+        """Create a Node object by fetching info from a file.
+
+        Args:
+            node_labels (list[str]): The labels of the nodes to query.
+
+        Returns:
+            list[Node]: A list of Node instances with hardware and power info.
+        """
+        with self.node_data_file_path.open() as f:
+            node_data = self.NodeDataModel(**yaml.safe_load(f))
+
+        if len(node_labels) != 1:
+            raise ValueError(
+                "FileNodeFactory can only create one node at a time from file."
+            )
+
+        return [
+            self._make_node(
+                name=node_label,
+                cpu_type=node_data.cpu_type,
+                gpu_type=node_data.gpu_type,
+                mem_type=node_data.mem_type,
+                component_powers=self.component_powers,
+            )
+            for node_label in node_labels
+        ]
