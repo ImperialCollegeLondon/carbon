@@ -44,6 +44,8 @@ class ClusterConfig(BaseModel):  # type: ignore[explicit-any]
         memory (dict): Dictionary with memory types and their power usage.
         scheduler (str): Scheduler type used by the cluster.
         scheduler_config (dict): Scheduler-specific configuration parameters.
+        average_intensity (float | None): Optional average carbon intensity
+            in gCO2eq/kWh for the region.
     """
 
     cluster_name: str
@@ -54,3 +56,4 @@ class ClusterConfig(BaseModel):  # type: ignore[explicit-any]
     memory: dict[str, dict[str, float]]
     scheduler: str
     scheduler_config: dict[str, Any]  # type: ignore[explicit-any]
+    average_intensity: float | None = None

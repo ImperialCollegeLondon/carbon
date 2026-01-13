@@ -21,3 +21,4 @@ scheduler_config:
   cpu_type: rome
   gpu_type: RTX6000
   mem_type: common
+average_intensity: 100
