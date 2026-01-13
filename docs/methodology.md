@@ -71,8 +71,9 @@ The start time of the job is used for the timestamp for which $I$ is fetched.
 
 Note that only CO2 emissions from electricity generation are reported by the API, meaning that other greenhouse gas emissions are neglected, along with other emissions due to indirect effects such as changes in land use.
 
-The API call can be skipped in favour of a hardcoded carbon intensity using the flag `--average-intensity`.
-This value (137 CO2/kWh) is based on an average of the UK's carbon intensity over 2023 (149 CO2/kWh) and 2024 (125 CO2/kWh) (see [Sources](sources.md#uk-average-carbon-intensities)).
+The API call can be skipped in favour of a configured carbon intensity using the flag `--average-intensity`.
+The intensity value used in this case can be provided in the cluster config file with the `average_intensity` key. If this config value is not set then an error will be raised if the `--average-intensity` flag is used.
+As an example for the included CX3 cluster configuration a value of 137 CO2/kWh is used. This is based on an average of the UK's carbon intensity over 2023 (149 CO2/kWh) and 2024 (125 CO2/kWh) (see [Sources](sources.md#uk-average-carbon-intensities)).
 
 ToDo: Link to separate doc with details about renewable energy certification (REGOs?).
 
