@@ -189,10 +189,10 @@ def test_file_job_factory_create(tmp_path: Path) -> None:
     job_data = FileJobFactory.FileJobModel(
         id="job_id",
         starttime=datetime(2025, 8, 21, 10, 0, 0),
-        runtime=2.0,
-        cputime=4.0,
+        runtime_hours=2.0,
+        cputime_corehours=4.0,
         ngpus=1,
-        memory=64.0,
+        memory_gb=64.0,
         node="node01",
         state=JobState.FINISHED,
     )
@@ -206,10 +206,10 @@ def test_file_job_factory_create(tmp_path: Path) -> None:
     assert job == Job(
         id=job_data.id,
         starttime=job_data.starttime,
-        runtime=job_data.runtime,
-        cputime=job_data.cputime,
-        gputime=job_data.ngpus * job_data.runtime,
-        memtime=job_data.memory * job_data.runtime,
+        runtime=job_data.runtime_hours,
+        cputime=job_data.cputime_corehours,
+        gputime=job_data.ngpus * job_data.runtime_hours,
+        memtime=job_data.memory_gb * job_data.runtime_hours,
         node=job_data.node,
         state=job_data.state,
     )

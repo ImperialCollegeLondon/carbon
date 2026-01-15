@@ -409,10 +409,10 @@ class FileJobFactory(JobFactory):
 
         id: str
         starttime: datetime
-        runtime: float
-        cputime: float
+        runtime_hours: float
+        cputime_corehours: float
         ngpus: float
-        memory: float
+        memory_gb: float
         node: str
         state: JobState
 
@@ -434,10 +434,10 @@ class FileJobFactory(JobFactory):
                 Job(
                     id=job_data.id,
                     starttime=job_data.starttime,
-                    runtime=job_data.runtime,
-                    cputime=job_data.cputime,
-                    gputime=job_data.ngpus * job_data.runtime,
-                    memtime=job_data.memory * job_data.runtime,
+                    runtime=job_data.runtime_hours,
+                    cputime=job_data.cputime_corehours,
+                    gputime=job_data.ngpus * job_data.runtime_hours,
+                    memtime=job_data.memory_gb * job_data.runtime_hours,
                     node=job_data.node,
                     state=job_data.state,
                 )
