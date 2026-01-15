@@ -215,7 +215,7 @@ class PBSNodeFactory(NodeFactory):
 
 @dataclass
 class FileNodeFactory(NodeFactory):
-    """Factory for creating Node objects by querying PBS."""
+    """Factory for creating Node objects from data in a file."""
 
     component_powers: ComponentPower
     node_data_file_path: Path
@@ -226,7 +226,7 @@ class FileNodeFactory(NodeFactory):
         config: dict[str, Any],
         component_powers: ComponentPower,
     ) -> Self:
-        """Initialize the DummyNodeFactory with a config.
+        """Initialize the FileNodeFactory with a config.
 
         Args:
             config (dict): Configuration dictionary.
@@ -255,14 +255,13 @@ class FileNodeFactory(NodeFactory):
         Returns:
             list[Node]: A list of Node instances with hardware and power info.
         """
-        with self.node_data_file_path.open() as f:
-            node_data = self.NodeDataModel(**yaml.safe_load(f))
-
         if len(node_labels) != 1:
             raise ValueError(
                 "FileNodeFactory can only create one node at a time from file."
             )
 
+        with self.node_data_file_path.open() as f:
+            node_data = self.NodeDataModel(**yaml.safe_load(f))
         return [
             self._make_node(
                 name=node_label,

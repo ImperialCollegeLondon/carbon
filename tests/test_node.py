@@ -55,7 +55,6 @@ def test_file_node_factory_create(tmp_path: Path, gpu_type: str | None) -> None:
         "memory": {"common": dict(per_gb_power_watts=0.5)},
     }
     cpu_type = "rome"
-    gpu_type = gpu_type
     mem_type = "common"
     node_file_path = tmp_path / "node_info.yaml"
     node_file_path.write_text(

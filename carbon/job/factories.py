@@ -411,7 +411,7 @@ class FileJobFactory(JobFactory):
         starttime: datetime
         runtime_hours: float
         cputime_corehours: float
-        ngpus: float
+        ngpus: int
         memory_gb: float
         node: str
         state: JobState

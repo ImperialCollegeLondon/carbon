@@ -37,7 +37,7 @@ class FileSchedulerConfig(BaseModel):
     """File-based scheduler configuration.
 
     Attributes:
-        node_data_file_path (str): Path to the file containing node data.
+        node_data_file_path (Path): Path to the file containing node data.
     """
 
     node_data_file_path: Path
