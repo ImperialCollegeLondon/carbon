@@ -9,7 +9,7 @@ class EmissionsComparison(ABC):
     """Abstract base class for comparing compute job emissions to other sources.
 
     Args:
-        data_file (TextIO): Path to the CSV file containing comparison data.
+        data_file (TextIO): Open filelike object of comparison data in CSV format.
     """
 
     def __init__(self, data_file: TextIO) -> None:
