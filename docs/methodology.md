@@ -73,7 +73,7 @@ Note that only CO2 emissions from electricity generation are reported by the API
 
 The API call can be skipped in favour of a configured carbon intensity using the flag `--average-intensity`.
 The intensity value used in this case can be provided in the cluster config file with the `average_intensity` key. If this config value is not set then an error will be raised if the `--average-intensity` flag is used.
-As an example for the included CX3 cluster configuration a value of 137 CO2/kWh is used. This is based on an average of the UK's carbon intensity over 2023 (149 CO2/kWh) and 2024 (125 CO2/kWh) (see [Sources](sources.md#uk-average-carbon-intensities)).
+As an example for the included CX3 cluster configuration a value of 137 CO2/kWh is used. This is based on an average of the UK's carbon intensity over 2023 (149 gCO2/kWh) and 2024 (125 gCO2/kWh) (see [Sources](sources.md#uk-average-carbon-intensities)).
 
 ToDo: Link to separate doc with details about renewable energy certification (REGOs?).
 

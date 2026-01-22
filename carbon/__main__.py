@@ -76,7 +76,7 @@ def main(
         compare (bool): If True, compare emissions to other activities.
         verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
-        average_intensity (bool): If True, use a hardcoded carbon intensity value.
+        average_intensity (bool): If True, use carbon intensity value from config file.
         split_jobs (bool): If True, show separate results for each job when multiple IDs
             provided.
         ignore_failed (bool): If True, quietly ignore jobs that can't be parsed or
@@ -115,7 +115,7 @@ def main(
         config_dict = yaml.safe_load(f)
     config = ClusterConfig(**config_dict)
 
-    if average_intensity and not config.average_intensity:
+    if average_intensity and config.average_intensity is None:
         print("--average-intensity flag given but average_intensity not set in config.")
         sys.exit(1)
 

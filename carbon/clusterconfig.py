@@ -56,4 +56,4 @@ class ClusterConfig(BaseModel):  # type: ignore[explicit-any]
     memory: dict[str, dict[str, float]]
     scheduler: str
     scheduler_config: dict[str, Any]  # type: ignore[explicit-any]
-    average_intensity: float | None = None
+    average_intensity: NonNegativeFloat | None = None

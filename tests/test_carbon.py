@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+import yaml
 from click.testing import CliRunner
 
 from carbon.__main__ import main
@@ -82,6 +83,30 @@ def test_multiple_jobs_split_results() -> None:
         == 2
     )
     assert out.count("Estimated emissions is 1022 gCO2") == 2
+
+
+def test_average_intensity_missing(tmpdir: Path) -> None:
+    """Giving --average-intensity without it in config errors."""
+    cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
+
+    with open(cfg_path) as f:
+        config_data = yaml.safe_load(f)
+
+    # Remove average_intensity if it exists
+    config_data.pop("average_intensity", None)
+    modified_cfg_path = tmpdir / "modified_dummy.yaml"
+    with open(modified_cfg_path, "w") as f:
+        yaml.safe_dump(config_data, f)
+
+    runner = CliRunner()
+    res = runner.invoke(
+        main, ["--config-path", str(modified_cfg_path), "--average-intensity", "1234"]
+    )
+    assert res.exit_code == 1
+    assert (
+        "--average-intensity flag given but average_intensity not set in config."
+        in res.output
+    )
 
 
 def test_intensity_api(fetch_mock) -> None:
