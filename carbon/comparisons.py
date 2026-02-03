@@ -24,13 +24,31 @@ class EmissionsComparison(ABC):
         pass
 
     @abstractmethod
-    def print_comparisons(self, emissions_gco2: float) -> None:
-        """Print the equivalent of each item for the given emissions.
+    def format_line(self, item: str, amount: float, unit: str) -> str:
+        """Format a single comparison line.
+
+        Args:
+            item (str): The name of the item.
+            amount (float): The amount of the item.
+            unit (str): The unit or note for the amount.
+
+        Returns:
+            str: Formatted comparison line.
+        """
+        pass
+
+    def output_text(self, emissions_gco2: float) -> str:
+        """Print the equivalent travel distances for the given emissions.
 
         Args:
             emissions_gco2 (float): The emissions in grams of CO2 to compare against.
         """
-        pass
+        output = "Equivalent to:\n"
+        output += "\n".join(
+            self.format_line(*equivalent)
+            for equivalent in self.get_equivalents(emissions_gco2)
+        )
+        return output
 
 
 class TravelComparisonData(BaseModel):
@@ -61,16 +79,18 @@ class Travel(EmissionsComparison):
             for comp in self.comparisons
         ]
 
-    def print_comparisons(self, emissions_gco2: float) -> None:
-        """Print the equivalent travel distances for the given emissions.
+    def format_line(self, item: str, amount: float, unit: str) -> str:
+        """Format a single comparison line.
 
         Args:
-            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
+            item (str): The name of the item.
+            amount (float): The amount of the item.
+            unit (str): The unit or note for the amount.
+
+        Returns:
+            str: Formatted comparison line.
         """
-        equivalents = self.get_equivalents(emissions_gco2)
-        print("Equivalent to:")
-        for method, kilometers, note in equivalents:
-            print(f"    {method} {kilometers:.1f} km {note}")
+        return f"    {item} {amount:.1f} km {unit}"
 
 
 class FoodComparisonData(BaseModel):
@@ -106,16 +126,18 @@ class Food(EmissionsComparison):
             for comp in self.comparisons
         ]
 
-    def print_comparisons(self, emissions_gco2: float) -> None:
-        """Print the equivalent food portions for the given emissions.
+    def format_line(self, item: str, amount: float, unit: str) -> str:
+        """Format a single comparison line.
 
         Args:
-            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
+            item (str): The name of the item.
+            amount (float): The amount of the item.
+            unit (str): The unit or note for the amount.
+
+        Returns:
+            str: Formatted comparison line.
         """
-        equivalents = self.get_equivalents(emissions_gco2)
-        print("Equivalent to:")
-        for food, portions, portion_name in equivalents:
-            if portion_name:
-                print(f"    {portions:.1f} {portion_name} of {food}")
-            else:
-                print(f"    {portions:.1f} {food}")
+        if unit:
+            return f"    {amount:.1f} {unit} of {item}"
+        else:
+            return f"    {amount:.1f} {item}"

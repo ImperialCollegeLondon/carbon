@@ -384,7 +384,7 @@ def output_result(
                     for row in csv.DictReader(travel_data.decode().split("\n"))
                 ]
             )
-            travel_comparer.print_comparisons(emissions)
+            print(travel_comparer.output_text(emissions))
 
         if not food_data:
             print(
@@ -400,7 +400,7 @@ def output_result(
                     for row in csv.DictReader(food_data.decode().split("\n"))
                 ]
             )
-            food_comparer.print_comparisons(emissions)
+            print(food_comparer.output_text(emissions))
 
 
 if __name__ == "__main__":
