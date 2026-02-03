@@ -1,37 +1,25 @@
 """Module for comparing compute job emissions to other sources."""
 
-import csv
 from abc import ABC, abstractmethod
-from typing import TextIO
+from dataclasses import dataclass
+
+from pydantic import BaseModel, PositiveFloat
+
+ComparisonRow = tuple[str, float, str]
 
 
 class EmissionsComparison(ABC):
-    """Abstract base class for comparing compute job emissions to other sources.
-
-    Args:
-        data_file (TextIO): Open filelike object of comparison data in CSV format.
-    """
-
-    def __init__(self, data_file: TextIO) -> None:
-        """Initialize the EmissionsComparison object and load comparison data from CSV.
-
-        Args:
-            data_file (TextIO): Open filelike object of comparison data in CSV format.
-        """
-        self.comparisons = []
-        reader = csv.DictReader(data_file)
-        for row in reader:
-            self.comparisons.append(row)
+    """Abstract base class for comparing compute job emissions to other sources."""
 
     @abstractmethod
-    def get_equivalents(self, emissions_gco2: float) -> list[tuple[str, float, str]]:
+    def get_equivalents(self, emissions_gco2: float) -> list[ComparisonRow]:
         """Calculates the amount of each item that would emit the same emissions.
 
         Args:
             emissions_gco2 (float): The emissions in grams of CO2 to compare against.
 
         Returns:
-            list[tuple[str, float, str]]: List of (item, amount, unit/note) tuples.
+            list[ComparisonRow]: List of (item, amount, unit/note) tuples.
         """
         pass
 
@@ -45,10 +33,21 @@ class EmissionsComparison(ABC):
         pass
 
 
+class TravelComparisonData(BaseModel):
+    """Data model for travel comparison data."""
+
+    method: str
+    gCO2e_per_km: PositiveFloat
+    note: str
+
+
+@dataclass
 class Travel(EmissionsComparison):
     """Compares emissions to travel methods using reference data."""
 
-    def get_equivalents(self, emissions_gco2: float) -> list[tuple[str, float, str]]:
+    comparisons: list[TravelComparisonData]
+
+    def get_equivalents(self, emissions_gco2: float) -> list[ComparisonRow]:
         """Calculates the distance via each method that would emit the same emissions.
 
         Args:
@@ -57,14 +56,10 @@ class Travel(EmissionsComparison):
         Returns:
             list[tuple[str, float, str]]: List of (method, kilometers, note) tuples.
         """
-        results = []
-        for comp in self.comparisons:
-            try:
-                kilometers = emissions_gco2 / float(comp["gCO2ePerKm"])
-                results.append((comp["Method"], kilometers, comp["Note"]))
-            except (KeyError, ValueError):
-                continue
-        return results
+        return [
+            (comp.method, emissions_gco2 / comp.gCO2e_per_km, comp.note)
+            for comp in self.comparisons
+        ]
 
     def print_comparisons(self, emissions_gco2: float) -> None:
         """Print the equivalent travel distances for the given emissions.
@@ -78,10 +73,22 @@ class Travel(EmissionsComparison):
             print(f"    {method} {kilometers:.1f} km {note}")
 
 
+class FoodComparisonData(BaseModel):
+    """Data model for food comparison data."""
+
+    food: str
+    gCO2e_per_kilo: PositiveFloat
+    portion_per_kilo: PositiveFloat
+    plural_portion_name: str
+
+
+@dataclass
 class Food(EmissionsComparison):
     """Compares emissions to food data using reference data."""
 
-    def get_equivalents(self, emissions_gco2: float) -> list[tuple[str, float, str]]:
+    comparisons: list[FoodComparisonData]
+
+    def get_equivalents(self, emissions_gco2: float) -> list[ComparisonRow]:
         """Calculate the number of portions that would emit the same emissions.
 
         Args:
@@ -90,15 +97,14 @@ class Food(EmissionsComparison):
         Returns:
             list[tuple[str, float, str]]: List of (food, portions, portion_name) tuples.
         """
-        results = []
-        for comp in self.comparisons:
-            try:
-                kilos = emissions_gco2 / float(comp["gCO2ePerKilo"])
-                portions = kilos * float(comp["PortionPerKilo"])
-                results.append((comp["Food"], portions, comp["PluralPortionName"]))
-            except (KeyError, ValueError):
-                continue
-        return results
+        return [
+            (
+                comp.food,
+                emissions_gco2 / comp.gCO2e_per_kilo * comp.portion_per_kilo,
+                comp.plural_portion_name,
+            )
+            for comp in self.comparisons
+        ]
 
     def print_comparisons(self, emissions_gco2: float) -> None:
         """Print the equivalent food portions for the given emissions.

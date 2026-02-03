@@ -1,4 +1,4 @@
-Food,gCO2ePerKilo,PortionPerKilo,PluralPortionName
+food,gCO2e_per_kilo,portion_per_kilo,plural_portion_name
 beef,60400,10,servings
 chicken,7500,10,servings
 tofu,2600,12.5,servings

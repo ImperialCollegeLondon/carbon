@@ -5,9 +5,9 @@ compute job, optionally comparing the emissions to other activities such as trav
 food consumption.
 """
 
+import csv
 import pkgutil
 from importlib.metadata import entry_points
-from io import StringIO
 
 import click
 
@@ -358,13 +358,15 @@ def output_result(
 
     # Do comparisons if requested
     if compare:
-        from carbon.comparisons import Food, Travel
+        from carbon.comparisons import (
+            Food,
+            FoodComparisonData,
+            Travel,
+            TravelComparisonData,
+        )
 
         # using pkgutil.get_data to access data files within the package
         # as this is more robust across different contexts (e.g. pyinstaller bundle)
-        # the current interface for the comparers accepts file-like objects
-        # so we have to do a clunky StringIO decode step here
-        # ideally comparers would be refactored in future to accept data directly
         travel_data = pkgutil.get_data("carbon", "data/travel.csv")
         food_data = pkgutil.get_data("carbon", "data/food.csv")
 
@@ -376,7 +378,12 @@ def output_result(
             )
         else:
             print("----- Travel Comparisons -----")
-            travel_comparer = Travel(StringIO(travel_data.decode("utf-8")))
+            travel_comparer = Travel(
+                [
+                    TravelComparisonData.model_validate(row)
+                    for row in csv.DictReader(travel_data.decode().split("\n"))
+                ]
+            )
             travel_comparer.print_comparisons(emissions)
 
         if not food_data:
@@ -387,7 +394,12 @@ def output_result(
             )
         else:
             print("----- Food Comparisons -----")
-            food_comparer = Food(StringIO(food_data.decode("utf-8")))
+            food_comparer = Food(
+                [
+                    FoodComparisonData.model_validate(row)
+                    for row in csv.DictReader(food_data.decode().split("\n"))
+                ]
+            )
             food_comparer.print_comparisons(emissions)
 
 
