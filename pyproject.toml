@@ -10,7 +10,7 @@ requires-python = ">=3.13, <4"
 dependencies = [
     "types-requests>=2.32.4.20250913,<3",
     "pydantic>=2.12.0,<3",
-    "pyaml>=25.7.0,<26",
+    "pyaml>=25.7.0,<27",
     "types-pyyaml>=6.0.12.20250915,<7",
     "click>=8.3.0,<9",
     "numpy>=2.3.3,<3",
