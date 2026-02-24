@@ -20,3 +20,4 @@ memory:
     per_gb_power_watts: 0.3725
 scheduler: pbs
 scheduler_config: {}
+average_intensity: 137.0  # gCO2eq/kWh, UK average over 2023 and 2024

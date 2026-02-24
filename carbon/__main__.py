@@ -77,7 +77,7 @@ def main(
         compare (bool): If True, compare emissions to other activities.
         verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
-        average_intensity (bool): If True, use a hardcoded carbon intensity value.
+        average_intensity (bool): If True, use carbon intensity value from config file.
         split_jobs (bool): If True, show separate results for each job when multiple IDs
             provided.
         ignore_failed (bool): If True, quietly ignore jobs that can't be parsed or
@@ -116,6 +116,10 @@ def main(
         config_dict = yaml.safe_load(f)
     config = ClusterConfig(**config_dict)
 
+    if average_intensity and config.average_intensity is None:
+        print("--average-intensity flag given but average_intensity not set in config.")
+        sys.exit(1)
+
     try:
         # also completes validation of scheduler specific config
         node_factory = get_node_factory_classes()[config.scheduler].from_config(
@@ -141,7 +145,7 @@ def main(
             job_factory,
             config.pue,
             config.region_id,
-            average_intensity,
+            config.average_intensity if average_intensity else None,
             ignore_failed,
         )
         failed_count = len(job_ids) - len(results)
@@ -301,7 +305,7 @@ def output_result(
         f"is {energy_consumed:.2f} kWh"
     )
     if average_intensity:
-        print(f"Using UK average carbon intensity of {intensity} gCO2/kWh")
+        print(f"Using average carbon intensity of {config.average_intensity} gCO2/kWh")
     elif isaggregate:
         print(f"Average carbon intensity across multiple jobs is {intensity} gCO2/kWh")
     else:
