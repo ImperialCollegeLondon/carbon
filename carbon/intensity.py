@@ -6,8 +6,12 @@ specified region and time period.
 """
 
 from datetime import datetime, timedelta
+from http import HTTPStatus
 
 import requests
+
+CARBON_INTENSITY_API_URL = "https://api.carbonintensity.org.uk"
+"""Base URL for the Carbon Intensity API."""
 
 
 class CarbonIntensity:
@@ -53,7 +57,7 @@ class CarbonIntensity:
         except requests.RequestException as e:
             raise ValueError(f"Error fetching carbon intensity data: {e}") from e
 
-        if response.status_code != 200:
+        if response.status_code != HTTPStatus.OK:
             raise ValueError(
                 f"Failed to fetch carbon intensity data: "
                 f"{response.status_code} {response.text}"
