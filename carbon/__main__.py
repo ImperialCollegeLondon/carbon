@@ -5,7 +5,8 @@ compute job, optionally comparing the emissions to other activities such as trav
 food consumption.
 """
 
-from pathlib import Path
+import pkgutil
+from io import StringIO
 
 import click
 
@@ -315,29 +316,34 @@ def output_result(
     if compare:
         from carbon.comparisons import Food, Travel
 
-        TRAVEL_PATH = Path(__file__).parent / "data" / "travel.csv"
-        FOOD_PATH = Path(__file__).parent / "data" / "food.csv"
+        # using pkgutil.get_data to access data files within the package
+        # as this is more robust across different contexts (e.g. pyinstaller bundle)
+        # the current interface for the comparers accepts file-like objects
+        # so we have to do a clunky StringIO decode step here
+        # ideally comparers would be refactored in future to accept data directly
+        travel_data = pkgutil.get_data("carbon", "data/travel.csv")
+        food_data = pkgutil.get_data("carbon", "data/food.csv")
 
-        if not TRAVEL_PATH.exists():
+        if not travel_data:
             print(
-                f"Error: Missing comparisons data file at {TRAVEL_PATH}. "
+                "Error: Missing comparisons data file for travel. "
                 "Please ensure the data directory is present and "
                 "contains the travel.csv file."
             )
         else:
             print("----- Travel Comparisons -----")
-            travel_comparer = Travel(TRAVEL_PATH)
+            travel_comparer = Travel(StringIO(travel_data.decode("utf-8")))
             travel_comparer.print_comparisons(emissions)
 
-        if not FOOD_PATH.exists():
+        if not food_data:
             print(
-                f"Error: Missing comparisons data file at {FOOD_PATH}. "
+                "Error: Missing comparisons data file for food. "
                 "Please ensure the data directory is present and "
                 "contains the food.csv file."
             )
         else:
             print("----- Food Comparisons -----")
-            food_comparer = Food(FOOD_PATH)
+            food_comparer = Food(StringIO(food_data.decode("utf-8")))
             food_comparer.print_comparisons(emissions)
 
 

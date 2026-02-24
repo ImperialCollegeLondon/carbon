@@ -165,6 +165,10 @@ PBS_JOB_ID_RE = re.compile(r"^\d+(\[\d+\])?(?:..*)?$")
 PBS_SUBJOB_ID_RE = re.compile(r"^\d+\[\d+\](?:..*)?$")
 PBS_ARRAY_ID_RE = re.compile(r"^\d+\[\](?:..*)?$")
 
+PBS_UNKNOWN_JOB_EXIT_CODE = 153
+PBS_MALFORMED_JOB_EXIT_CODES = {1, 170}
+PBS_KNOWN_EXIT_CODES = PBS_MALFORMED_JOB_EXIT_CODES | {PBS_UNKNOWN_JOB_EXIT_CODE}
+
 
 @dataclass
 class PBSJobFactory(JobFactory):
@@ -201,9 +205,9 @@ class PBSJobFactory(JobFactory):
                 text=True,  # Potentially a 10000 line long str. Could improve?
             )
         except subprocess.CalledProcessError as e:
-            if e.returncode == 153:
+            if e.returncode == PBS_UNKNOWN_JOB_EXIT_CODE:
                 raise UnknownJobIDError(f"Unknown job ID: {job_id}")
-            elif e.returncode == 1 or e.returncode == 170:
+            elif e.returncode in PBS_MALFORMED_JOB_EXIT_CODES:
                 raise MalformedJobIDError(f"Malformed job ID: {job_id}")
             else:
                 raise ValueError(f"Failed to fetch job data: {e}")
@@ -280,7 +284,7 @@ class PBSJobFactory(JobFactory):
             # attempt to parse e.stdout and continue with the valid jobs. If not,
             # raise the appropriate exception.
 
-            if e.returncode in [153, 1, 170]:
+            if e.returncode in PBS_KNOWN_EXIT_CODES:
                 # Try to extract the list of bad ids from stderr if present
                 bad_ids = " ".join(
                     [
@@ -295,9 +299,9 @@ class PBSJobFactory(JobFactory):
                 if ignore_failed:
                     e_stdout = e.stdout
                 else:
-                    if e.returncode == 153:
+                    if e.returncode == PBS_UNKNOWN_JOB_EXIT_CODE:
                         raise UnknownJobIDError(f"Unknown job ID(s): {bad_ids}")
-                    elif e.returncode == 1 or e.returncode == 170:
+                    elif e.returncode in PBS_MALFORMED_JOB_EXIT_CODES:
                         raise MalformedJobIDError(f"Malformed job ID(s): {bad_ids}")
             else:
                 raise

@@ -2,38 +2,26 @@
 
 import csv
 from abc import ABC, abstractmethod
-from pathlib import Path
+from typing import TextIO
 
 
 class EmissionsComparison(ABC):
     """Abstract base class for comparing compute job emissions to other sources.
 
     Args:
-        data_path (Path): Path to the CSV file containing comparison data.
+        data_file (TextIO): Open filelike object of comparison data in CSV format.
     """
 
-    def __init__(self, data_path: Path) -> None:
+    def __init__(self, data_file: TextIO) -> None:
         """Initialize the EmissionsComparison object and load comparison data from CSV.
 
         Args:
-            data_path (Path): Path to the CSV file containing comparison data.
+            data_file (TextIO): Open filelike object of comparison data in CSV format.
         """
-        self.data_path = data_path
-        self.comparisons = self._load_comparisons()
-
-    def _load_comparisons(self) -> list[dict[str, str]]:
-        """Load comparison data from a CSV file.
-
-        Returns:
-            list[dict[str, str]]: List of dictionaries, each representing a row from the
-                CSV file.
-        """
-        comparisons = []
-        with open(self.data_path, newline="") as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                comparisons.append(row)
-        return comparisons
+        self.comparisons = []
+        reader = csv.DictReader(data_file)
+        for row in reader:
+            self.comparisons.append(row)
 
     @abstractmethod
     def get_equivalents(self, emissions_gco2: float) -> list[tuple[str, float, str]]:
