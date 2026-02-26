@@ -214,6 +214,7 @@ class PBSNodeFactory(NodeFactory):
 
 
 @dataclass
+<<<<<<< HEAD
 class FileNodeFactory(NodeFactory):
     """Factory for creating Node objects from data in a file."""
 
@@ -275,6 +276,8 @@ class FileNodeFactory(NodeFactory):
 
 
 @dataclass
+=======
+>>>>>>> 5736276 (fixed mypy)
 class SLURMNodeFactory(NodeFactory):
     """Factory for creating Node objects by querying SLURM."""
 
