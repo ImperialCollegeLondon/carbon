@@ -23,6 +23,15 @@ from carbon.node.factories import (
     FileNodeFactory,
     NodeFactory,
     PBSNodeFactory,
+    JobFactory,
+    PBSJobFactory,
+    SLURMJobFactory,
+)
+from carbon.node.factories import (
+    DummyNodeFactory,
+    NodeFactory,
+    PBSNodeFactory,
+    SLURMNodeFactory,
 )
 
 
@@ -31,12 +40,22 @@ def get_node_factory_classes() -> dict[str, type[NodeFactory]]:
     # here is where you can do dynamic import gubbins to allow users to supply
     # their own node factory classes
     # for now, just return the built-in ones
-    return dict(dummy=DummyNodeFactory, pbs=PBSNodeFactory, file=FileNodeFactory)
+    return dict(
+        dummy=DummyNodeFactory,
+        pbs=PBSNodeFactory,
+        file=FileNodeFactory,
+        slurm=SLURMNodeFactory,
+    )
 
 
 def get_job_factory_classes() -> dict[str, type[JobFactory]]:
     """Get available job factory classes."""
-    return dict(dummy=DummyJobFactory, pbs=PBSJobFactory, file=FileJobFactory)
+    return dict(
+        dummy=DummyJobFactory,
+        pbs=PBSJobFactory,
+        file=FileJobFactory,
+        slurm=SLURMJobFactory,
+    )
 
 
 @click.command()

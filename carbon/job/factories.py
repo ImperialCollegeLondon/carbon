@@ -172,6 +172,15 @@ PBS_UNKNOWN_JOB_EXIT_CODE = 153
 PBS_MALFORMED_JOB_EXIT_CODES = {1, 170}
 PBS_KNOWN_EXIT_CODES = PBS_MALFORMED_JOB_EXIT_CODES | {PBS_UNKNOWN_JOB_EXIT_CODE}
 
+# Slurm job IDs: 12345, 12345_0, 12345_[0-10], 12345_[0-10%2]
+SLURM_JOB_ID_RE = re.compile(r"^\d+(_\d+)?$")
+SLURM_SUBJOB_ID_RE = re.compile(r"^\d+_\d+$")
+SLURM_ARRAY_ID_RE = re.compile(r"^\d+_\[[\d,\-\%]+\]$")
+
+# sacct/scontrol exit codes
+SLURM_UNKNOWN_JOB_EXIT_CODE = 1  # "Invalid job id specified"
+SLURM_KNOWN_EXIT_CODES = {SLURM_UNKNOWN_JOB_EXIT_CODE}
+
 
 @dataclass
 class PBSJobFactory(JobFactory):
@@ -447,3 +456,174 @@ class FileJobFactory(JobFactory):
                 )
             )
         return jobs
+
+
+@dataclass
+class SLURMJobFactory(JobFactory):
+    """A job factory for Slurm scheduler."""
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> Self:  # type: ignore[explicit-any]
+        """Initialize the slurm job factory."""
+        return cls()
+
+    def is_array(self, job_id: str) -> bool:
+        """Check if the job ID corresponds to an array job."""
+        return "_" in job_id
+
+    def split_sub_jobs(self, job_id: str) -> list[str]:
+        """Split a Slurm array job id into the corresponding list of subjob ids."""
+        if not SLURM_ARRAY_ID_RE.fullmatch(job_id):
+            raise MalformedJobIDError(
+                f"Malformed array job ID: {job_id}. Should be digits followed by "
+                "an underscore and square brackets containing indices or ranges."
+            )
+
+        # Use sacct to list all sub-jobs of the array
+        cmd = f"sacct -j {job_id} --noheader --parsable2 -o JobID,State"
+
+        try:
+            output = subprocess.run(
+                cmd,
+                shell=True,
+                check=True,
+                timeout=20,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            if e.returncode == SLURM_UNKNOWN_JOB_EXIT_CODE:
+                raise UnknownJobIDError(f"Unknown job ID: {job_id}")
+            else:
+                raise ValueError(f"Failed to fetch job data: {e}")
+
+        sub_jobs = []
+        for line in output.stdout.strip().splitlines():
+            parts = line.split("|")
+            label = parts[0]
+            state = parts[1]
+
+            if SLURM_SUBJOB_ID_RE.fullmatch(label) and state in JobState:
+                sub_jobs.append(label)
+
+        return sub_jobs
+
+    def create(self, job_ids: list[str], ignore_failed: bool = False) -> list[Job]:
+        """Create a list of Job objects by fetching data from Slurm for multiple job IDs."""
+        malformed_ids = []
+        for id in job_ids:
+            if not SLURM_JOB_ID_RE.fullmatch(id):
+                malformed_ids.append(id)
+        if malformed_ids and not ignore_failed:
+            raise MalformedJobIDError(
+                "Malformed job ID(s): " + " ".join(malformed_ids) + ". "
+                "Should be composed of digits, "
+                "optionally followed by an underscore and array index."
+            )
+        elif malformed_ids and ignore_failed:
+            job_ids = [id for id in job_ids if id not in malformed_ids]
+
+        if not job_ids:
+            return []
+
+        cmd = "sacct -j " + ",".join(job_ids) + " --json"
+
+        e_stdout = b""
+
+        try:
+            output = subprocess.run(
+                cmd,
+                shell=True,
+                check=True,
+                timeout=20,
+                capture_output=True,
+            )
+        except subprocess.CalledProcessError as e:
+            if e.returncode in SLURM_KNOWN_EXIT_CODES:
+                bad_ids = " ".join(
+                    [
+                        line.split()[-1]
+                        for line in str(e.stderr, "utf-8").splitlines()
+                        if line.strip()
+                    ]
+                )
+                if ignore_failed:
+                    e_stdout = e.stdout
+                else:
+                    raise UnknownJobIDError(f"Unknown job ID(s): {bad_ids}")
+            else:
+                raise
+
+        stdout = output.stdout if not e_stdout else e_stdout
+        job_data = json.loads(stdout)
+
+        if not job_data or "jobs" not in job_data:
+            raise MissingJobDataError(f"No job data found for ID(s): {job_ids}")
+
+        job_list = []
+        for job in job_data["jobs"]:
+            try:
+                state = job["state"]["current"]
+                if state not in JobState:
+                    if ignore_failed:
+                        continue
+                    else:
+                        raise JobStateError(
+                            f"Analysis of jobs with state {state} is not "
+                            "currently supported. Please specify a running "
+                            "(RUNNING), completed (COMPLETED), or failed (FAILED) job."
+                        )
+
+                # Skip .batch and .extern steps
+                job_id = str(job["job_id"])
+                if "." in job.get("name", ""):
+                    continue
+
+                node = job["nodes"].split(",")[0]
+
+                starttime = datetime.fromtimestamp(job["start"])
+
+                # Parse memory from tres_req (e.g., "mem=4G") or reqmem
+                memory = 0.0
+                tres = job.get("tres", {}).get("requested", [])
+                for tres_entry in tres:
+                    if tres_entry.get("type") == "mem":
+                        mem_val = tres_entry.get("count", 0)
+                        # TRES mem is in MB by default
+                        memory = mem_val / 1024.0
+                        break
+
+                elapsed = job["time"]["elapsed"]
+                runtime = elapsed / 3600.0  # seconds to hours
+
+                cputime_seconds = job["time"].get("total", {}).get("seconds", 0)
+                cputime = cputime_seconds / 3600.0
+
+                # Extract GPU count from TRES
+                ngpus = 0
+                for tres_entry in tres:
+                    if (
+                        tres_entry.get("type") == "gres"
+                        and tres_entry.get("name") == "gpu"
+                    ):
+                        ngpus = tres_entry.get("count", 0)
+                        break
+
+                job_list.append(
+                    Job(
+                        id=job_id,
+                        starttime=starttime,
+                        runtime=runtime,
+                        cputime=cputime,
+                        gputime=ngpus * runtime,
+                        memtime=memory * runtime,
+                        node=node,
+                        state=JobState(state),
+                    )
+                )
+            except KeyError as e:
+                if ignore_failed:
+                    continue
+                else:
+                    raise MissingJobDataError(f"Missing expected job data: {e}")
+        return job_list
