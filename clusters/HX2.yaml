@@ -6,7 +6,7 @@ cpus:
     per_core_power_watts: 5.47
 gpus:
   H200:
-    per_gpu_power_watts: 700  
+    per_gpu_power_watts: 700
 memory:
   common:
     per_gb_power_watts: 0.3725

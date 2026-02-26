@@ -509,7 +509,7 @@ class SLURMJobFactory(JobFactory):
         return sub_jobs
 
     def create(self, job_ids: list[str], ignore_failed: bool = False) -> list[Job]:
-        """Create a list of Job objects by fetching data from Slurm for multiple job IDs."""
+        """Create a list of Job objects, Fetch data from Slurm for multiple job IDs."""
         malformed_ids = []
         for id in job_ids:
             if not SLURM_JOB_ID_RE.fullmatch(id):

@@ -17,18 +17,11 @@ from carbon.job.factories import (
     FileJobFactory,
     JobFactory,
     PBSJobFactory,
-)
-from carbon.node.factories import (
-    DummyNodeFactory,
-    FileNodeFactory,
-    NodeFactory,
-    PBSNodeFactory,
-    JobFactory,
-    PBSJobFactory,
     SLURMJobFactory,
 )
 from carbon.node.factories import (
     DummyNodeFactory,
+    FileNodeFactory,
     NodeFactory,
     PBSNodeFactory,
     SLURMNodeFactory,
