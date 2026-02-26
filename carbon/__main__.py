@@ -5,7 +5,8 @@ compute job, optionally comparing the emissions to other activities such as trav
 food consumption.
 """
 
-from pathlib import Path
+import pkgutil
+from io import StringIO
 
 import click
 
@@ -86,7 +87,7 @@ def main(
         compare (bool): If True, compare emissions to other activities.
         verbose (bool): If True, provide verbose output.
         config_path (str): Path to the cluster configuration file.
-        average_intensity (bool): If True, use a hardcoded carbon intensity value.
+        average_intensity (bool): If True, use carbon intensity value from config file.
         split_jobs (bool): If True, show separate results for each job when multiple IDs
             provided.
         ignore_failed (bool): If True, quietly ignore jobs that can't be parsed or
@@ -125,6 +126,10 @@ def main(
         config_dict = yaml.safe_load(f)
     config = ClusterConfig(**config_dict)
 
+    if average_intensity and config.average_intensity is None:
+        print("--average-intensity flag given but average_intensity not set in config.")
+        sys.exit(1)
+
     try:
         # also completes validation of scheduler specific config
         node_factory = get_node_factory_classes()[config.scheduler].from_config(
@@ -150,7 +155,7 @@ def main(
             job_factory,
             config.pue,
             config.region_id,
-            average_intensity,
+            config.average_intensity if average_intensity else None,
             ignore_failed,
         )
         failed_count = len(job_ids) - len(results)
@@ -310,7 +315,7 @@ def output_result(
         f"is {energy_consumed:.2f} kWh"
     )
     if average_intensity:
-        print(f"Using UK average carbon intensity of {intensity} gCO2/kWh")
+        print(f"Using average carbon intensity of {config.average_intensity} gCO2/kWh")
     elif isaggregate:
         print(f"Average carbon intensity across multiple jobs is {intensity} gCO2/kWh")
     else:
@@ -321,29 +326,34 @@ def output_result(
     if compare:
         from carbon.comparisons import Food, Travel
 
-        TRAVEL_PATH = Path(__file__).parent / "data" / "travel.csv"
-        FOOD_PATH = Path(__file__).parent / "data" / "food.csv"
+        # using pkgutil.get_data to access data files within the package
+        # as this is more robust across different contexts (e.g. pyinstaller bundle)
+        # the current interface for the comparers accepts file-like objects
+        # so we have to do a clunky StringIO decode step here
+        # ideally comparers would be refactored in future to accept data directly
+        travel_data = pkgutil.get_data("carbon", "data/travel.csv")
+        food_data = pkgutil.get_data("carbon", "data/food.csv")
 
-        if not TRAVEL_PATH.exists():
+        if not travel_data:
             print(
-                f"Error: Missing comparisons data file at {TRAVEL_PATH}. "
+                "Error: Missing comparisons data file for travel. "
                 "Please ensure the data directory is present and "
                 "contains the travel.csv file."
             )
         else:
             print("----- Travel Comparisons -----")
-            travel_comparer = Travel(TRAVEL_PATH)
+            travel_comparer = Travel(StringIO(travel_data.decode("utf-8")))
             travel_comparer.print_comparisons(emissions)
 
-        if not FOOD_PATH.exists():
+        if not food_data:
             print(
-                f"Error: Missing comparisons data file at {FOOD_PATH}. "
+                "Error: Missing comparisons data file for food. "
                 "Please ensure the data directory is present and "
                 "contains the food.csv file."
             )
         else:
             print("----- Food Comparisons -----")
-            food_comparer = Food(FOOD_PATH)
+            food_comparer = Food(StringIO(food_data.decode("utf-8")))
             food_comparer.print_comparisons(emissions)
 
 

@@ -9,7 +9,7 @@ However, the structure of the code has been designed with the view of potential 
 and with other workload schedulers.
 
 By default, the tool requires an internet connection in order to request data from the [NESO's carbon intensity API](https://carbonintensity.org.uk/).
-If required, this request can be skipped in favour of a hardcoded carbon intensity value using the `--average-intensity` flag.
+If required, this request can be skipped in favour of a configurable carbon intensity value using the `--average-intensity` flag.
 
 ## For developers
 
