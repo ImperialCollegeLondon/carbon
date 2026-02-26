@@ -3,12 +3,13 @@
 import json
 import subprocess
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
 
-from carbon.job import Job, UnknownJobIDError
+from carbon.job import Job, JobState, UnknownJobIDError
 from carbon.job.factories import PBSJobFactory, hours
 from carbon.node import Node
 
@@ -177,3 +178,38 @@ def test_energy_calculate_no_gpu() -> None:
     result = job.calculate_energy(node, 1.5)
 
     assert np.isclose(result, expected, atol=1e-9)
+
+
+def test_file_job_factory_create(tmp_path: Path) -> None:
+    """Test FileJobFactory creates jobs from a file."""
+    import yaml
+
+    from carbon.job.factories import FileJobFactory
+
+    job_data = FileJobFactory.FileJobModel(
+        id="job_id",
+        starttime=datetime(2025, 8, 21, 10, 0, 0),
+        runtime_hours=2.0,
+        cputime_corehours=4.0,
+        ngpus=1,
+        memory_gb=64.0,
+        node="node01",
+        state=JobState.FINISHED,
+    )
+
+    file_path = tmp_path / "job.yaml"
+    with open(file_path, "w") as f:
+        f.write(yaml.dump(job_data.model_dump()))
+
+    factory = FileJobFactory()
+    [job] = factory.create([str(file_path)])
+    assert job == Job(
+        id=job_data.id,
+        starttime=job_data.starttime,
+        runtime=job_data.runtime_hours,
+        cputime=job_data.cputime_corehours,
+        gputime=job_data.ngpus * job_data.runtime_hours,
+        memtime=job_data.memory_gb * job_data.runtime_hours,
+        node=job_data.node,
+        state=job_data.state,
+    )
