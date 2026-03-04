@@ -16,6 +16,16 @@ class JobState(Enum):
 
 
 @dataclass
+class EnergyBreakdown:
+    """Breakdown of energy consumption by component."""
+
+    cpu: float
+    gpu: float
+    memory: float
+    total: float
+
+
+@dataclass
 class Job:
     """Represents a compute job, including its resource usage and timing information."""
 
@@ -51,14 +61,11 @@ class Job:
             pue (float): Power Usage Effectiveness of the data center.
 
         Returns:
-            float: The energy consumed in kilowatt-hours.
+            EnergyBreakdown: The energy consumed broken down by component.
         """
-        return (
-            (
-                node.per_core_power_watts * self.cputime
-                + node.per_gpu_power_watts * self.gputime
-                + node.per_gb_power_watts * self.memtime
-            )
-            * pue
-            / 1000.0
+        cpu = node.per_core_power_watts * self.cputime * pue / 1000.0
+        gpu = node.per_gpu_power_watts * self.gputime * pue / 1000.0
+        memory = node.per_gb_power_watts * self.memtime * pue / 1000.0
+        return EnergyBreakdown(
+            cpu=cpu, gpu=gpu, memory=memory, total=cpu + gpu + memory
         )

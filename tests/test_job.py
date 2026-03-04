@@ -150,7 +150,7 @@ def test_energy_calculate() -> None:
     expected = ((10.0 * 2.0) + (200.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
     result = job.calculate_energy(node, 1.5)
 
-    assert np.isclose(result, expected, atol=1e-9)
+    assert np.isclose(result.total, expected, atol=1e-9)
 
 
 def test_energy_calculate_no_gpu() -> None:
@@ -177,7 +177,7 @@ def test_energy_calculate_no_gpu() -> None:
     expected = ((10.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
     result = job.calculate_energy(node, 1.5)
 
-    assert np.isclose(result, expected, atol=1e-9)
+    assert np.isclose(result.total, expected, atol=1e-9)
 
 
 def test_file_job_factory_create(tmp_path: Path) -> None:

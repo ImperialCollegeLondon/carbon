@@ -314,6 +314,11 @@ def output_result(
         f"and {job.memtime:.2f} GB-hours "
         f"is {energy_consumed:.2f} kWh"
     )
+    print(
+        f"  CPU: {result.energy_breakdown.cpu:.2f} kWh, "
+        f"GPU: {result.energy_breakdown.gpu:.2f} kWh, "
+        f"Memory: {result.energy_breakdown.memory:.2f} kWh"
+    )
     if average_intensity:
         print(f"Using average carbon intensity of {config.average_intensity} gCO2/kWh")
     elif isaggregate:
