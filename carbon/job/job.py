@@ -13,6 +13,10 @@ class JobState(Enum):
     FINISHED = "F"
     RUNNING = "R"
     EXPIRED = "X"
+    COMPLETED = "COMPLETED"
+    SLURM_RUNNING = "RUNNING"
+    FAILED = "FAILED"
+    TIMEOUT = "TIMEOUT"
 
 
 @dataclass

@@ -564,7 +564,7 @@ class SLURMJobFactory(JobFactory):
         for job in job_data["jobs"]:
             try:
                 state = job["state"]["current"]
-                if state not in JobState:
+                if state not in [s.value for s in JobState]:
                     if ignore_failed:
                         continue
                     else:

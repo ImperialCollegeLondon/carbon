@@ -217,8 +217,7 @@ def test_file_job_factory_create(tmp_path: Path) -> None:
 
 def _make_SLURMjob_json(job_id: str = "12345", mpijob: bool = False) -> bytes:
     """Provide a minimal sacct JSON payload as bytes."""
-    nodes = "hx2-3-0/60" if not mpijob else "hx3-2-1/60+hx2-3-2/60"
-
+    nodes = "hx2-3-0" if not mpijob else "hx3-2-1,hx2-3-2"
     job_data = {
         "jobs": [
             {
@@ -286,7 +285,7 @@ def test_SLURM_factory_bulk_ignore_failed_false_raises(monkeypatch) -> None:
 
 @pytest.mark.parametrize(
     "isMPIjob, first_node_name",
-    [(False, "cx3-3-0"), (True, "cx3-3-1")],
+    [(False, "hx2-3-0"), (True, "hx3-2-1")],
 )
 def test_SLURM_job_factory_parse_job(isMPIjob: bool, first_node_name: str) -> None:
     """Job.fromSLURM parses sacct JSON and returns a Job with expected fields."""
