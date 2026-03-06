@@ -53,7 +53,7 @@ class Job:
     state: JobState = JobState.FINISHED
     """The state of the job."""
 
-    def calculate_energy(self, node: Node, pue: float) -> float:
+    def calculate_energy(self, node: Node, pue: float) -> EnergyBreakdown:
         """Calculate energy consumption in kilowatt-hours for a compute job.
 
         Args:
