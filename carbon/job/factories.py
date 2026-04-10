@@ -332,6 +332,15 @@ class PBSJobFactory(JobFactory):
                 # If the job ran on multiple nodes (e.g., using MPI),
                 # just take the first one. This will be used to get the cpu_type
                 # and gpu_type, which should be the same across the nodes.
+
+                comment = job_data["Jobs"][internal_id].get("comment", "")
+                if "Not Running" in comment:
+                    if ignore_failed:
+                        continue
+                    else:
+                        raise JobStateError(
+                            f"Job {internal_id} never started. Comment: '{comment}'"
+                        )
                 nodes = [
                     name.split("/", 1)[0]
                     for name in job_data["Jobs"][internal_id]["exec_host"].split("+")
