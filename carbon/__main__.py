@@ -6,13 +6,13 @@ food consumption.
 """
 
 import pkgutil
+from importlib.metadata import entry_points
 from io import StringIO
 
 import click
 
 from carbon import RunResult, run
 from carbon.clusterconfig import ClusterConfig
-from carbon.job import factories
 from carbon.job.factories import (
     DummyJobFactory,
     FileJobFactory,
@@ -25,7 +25,6 @@ from carbon.node.factories import (
     NodeFactory,
     PBSNodeFactory,
 )
-from importlib.metadata import entry_points
 
 
 def get_node_factory_classes() -> dict[str, type[NodeFactory]]:
@@ -33,7 +32,9 @@ def get_node_factory_classes() -> dict[str, type[NodeFactory]]:
     # here is where you can do dynamic import gubbins to allow users to supply
     # their own node factory classes
     # for now, just return the built-in ones
-    factories = dict(dummy=DummyNodeFactory, pbs=PBSNodeFactory, file=FileNodeFactory)
+    factories: dict[str, type[NodeFactory]] = dict(
+        dummy=DummyNodeFactory, pbs=PBSNodeFactory, file=FileNodeFactory
+    )
     for ep in entry_points(group="carbon.node_factory"):
         factories[ep.name] = ep.load()
 
@@ -42,7 +43,9 @@ def get_node_factory_classes() -> dict[str, type[NodeFactory]]:
 
 def get_job_factory_classes() -> dict[str, type[JobFactory]]:
     """Get available job factory classes."""
-    factories = dict(dummy=DummyJobFactory, pbs=PBSJobFactory, file=FileJobFactory)
+    factories: dict[str, type[JobFactory]] = dict(
+        dummy=DummyJobFactory, pbs=PBSJobFactory, file=FileJobFactory
+    )
 
     for ep in entry_points(group="carbon.job_factory"):
         factories[ep.name] = ep.load()
