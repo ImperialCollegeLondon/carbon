@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pytest
 
+from carbon.__main__ import get_job_factory_classes
 from carbon.job import Job, JobState, UnknownJobIDError
 from carbon.job.factories import PBSJobFactory, hours
 from carbon.node import Node
@@ -213,3 +214,20 @@ def test_file_job_factory_create(tmp_path: Path) -> None:
         node=job_data.node,
         state=job_data.state,
     )
+
+
+def test_get_job_factory_classes_with_plugin() -> None:
+    """Test that get_job_factory_classes returns the expected classes."""
+    mock_factory = Mock()
+    mock_ep = Mock()
+    mock_ep.name = "slurm"
+    mock_ep.load.return_value = [mock_factory]
+
+    with patch("carbon.__main__.entry_points", return_value=[mock_ep]):
+        factories = get_job_factory_classes()
+
+    assert "file" in factories
+    assert "pbs" in factories
+    assert "dummy" in factories
+    assert "slurm" in factories
+    assert factories["slurm"] == [mock_factory]

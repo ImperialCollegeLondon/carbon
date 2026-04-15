@@ -1,9 +1,11 @@
 """Unit tests for the Node class."""
 
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
 
+from carbon.__main__ import get_node_factory_classes
 from carbon.node import Node
 
 
@@ -84,3 +86,20 @@ def test_file_node_factory_create(tmp_path: Path, gpu_type: str | None) -> None:
         ),
         **component_powers["memory"]["common"],
     )
+
+
+def test_get_node_factory_classes_with_plugin() -> None:
+    """Test that get_node_factory_classes returns the expected classes."""
+    mock_factory = Mock()
+    mock_ep = Mock()
+    mock_ep.name = "slurm"
+    mock_ep.load.return_value = [mock_factory]
+
+    with patch("carbon.__main__.entry_points", return_value=[mock_ep]):
+        factories = get_node_factory_classes()
+
+    assert "file" in factories
+    assert "pbs" in factories
+    assert "dummy" in factories
+    assert "slurm" in factories
+    assert factories["slurm"] == [mock_factory]
