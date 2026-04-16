@@ -39,3 +39,14 @@ jobs:
       - name: Check that documentation builds cleanly with MkDocs
         if: matrix.os == 'ubuntu-latest'
         run: uv run mkdocs build --strict
+
+      - name: Build the executable
+        if: github.ref == 'refs/heads/master' && matrix.os == 'ubuntu-latest'
+        run: uv run pyinstaller carbon.spec
+
+      - name: upload artifact
+        if: github.ref == 'refs/heads/master' && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v7
+        with:
+          name: carbon
+          path: dist/carbon
