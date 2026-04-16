@@ -21,3 +21,4 @@ memory:
 scheduler: pbs
 scheduler_config: {}
 average_intensity: 137.0  # gCO2eq/kWh, UK average over 2023 and 2024
+min_runtime: 600

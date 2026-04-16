@@ -124,3 +124,22 @@ def test_intensity_api(fetch_mock) -> None:
         "and 24.00 GPU-hours and 288.00 GB-hours is 10.22 kWh"
     ) in out
     assert "Estimated emissions is 10 gCO2" in out
+
+
+def test_short_job_skips_api(tmpdir: Path) -> None:
+    """Jobs shorter than min_runtime should skip API calls and have 0 intensity."""
+    cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
+
+    with open(cfg_path) as f:
+        config = yaml.safe_load(f)
+
+    config["scheduler_config"]["run_time"] = 0.1
+
+    modified_cfg_path = tmpdir / "modified_dummy.yaml"
+    with open(modified_cfg_path, "w") as f:
+        yaml.safe_dump(config, f)
+
+    runner = CliRunner()
+    res = runner.invoke(main, ["--config-path", str(modified_cfg_path), "1234"])
+    assert res.exit_code == 0
+    assert "Estimated emissions is 0 gCO2" in res.output
