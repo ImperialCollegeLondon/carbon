@@ -272,3 +272,111 @@ class FileNodeFactory(NodeFactory):
             )
             for node_label in node_labels
         ]
+
+
+@dataclass
+class SLURMNodeFactory(NodeFactory):
+    """Factory for creating Node objects by querying SLURM."""
+
+    component_powers: ComponentPower
+
+    @classmethod
+    def from_config(  # type: ignore[explicit-any]
+        cls,
+        config: dict[str, Any],
+        component_powers: ComponentPower,
+    ) -> Self:
+        """Initialize the DummyNodeFactory with a config.
+
+        Args:
+            config (dict): Configuration dictionary (not used in dummy factory).
+            component_powers (dict): Dictionary of power usages for components.
+        """
+        # no use for the config here currently but this could be used to pass in site
+        # specific configuration in the future
+        return cls(component_powers=component_powers)
+
+    def create(self, node_labels: list[str]) -> list[Node]:
+        """Create a Node object by fetching info from PBS and cluster config.
+
+        Args:
+            node_labels (list[str]): The labels of the nodes to query.
+
+        Returns:
+            list[Node]: A list of Node instances with hardware and power info.
+        """
+        # list of object ids passed to qmgr should be comma-seperated
+        cmd = "scontrol show node " + " ".join(node_labels)
+        result = subprocess.run(
+            cmd, shell=True, timeout=20, capture_output=True, text=True, check=True
+        )
+
+        node_list = []
+
+        node_info_list = [lines for lines in result.stdout.split("\n\n") if lines]
+        for node_info in node_info_list:
+            node_label: str = ""
+            cpu_type: str = ""
+            gpu_type: str | None = None
+            mem_type: str = "common"  # Memory hardcoded to common type
+            for line in node_info.splitlines():
+                for field in line.strip().split():
+                    key, _, value = field.partition("=")
+                    if key == "NodeName":
+                        node_label = value
+                    elif key == "AvailableFeatures":
+                        features = value.split(",")
+                        for f in features:
+                            if f in self.component_powers["cpus"]:
+                                cpu_type = f
+                    elif key == "Gres":
+                        # e.g. "gpu:H200:4"
+                        if value and value != "(null)":
+                            parts = value.split(":")
+                            if len(parts) >= 2 and parts[0] == "gpu":
+                                gpu_type = parts[1]
+
+            # Look up power usage for cpu/gpu/memory
+            try:
+                per_core_power_watts = self.component_powers["cpus"][cpu_type][
+                    "per_core_power_watts"
+                ]
+            except KeyError:
+                raise ValueError(f"CPU type '{cpu_type}' not found in cluster config.")
+
+            if gpu_type:
+                try:
+                    per_gpu_power_watts = self.component_powers["gpus"][gpu_type][
+                        "per_gpu_power_watts"
+                    ]
+                except KeyError:
+                    raise ValueError(
+                        f"GPU type '{gpu_type}' not found in cluster config."
+                    )
+            else:
+                per_gpu_power_watts = 0.0
+
+            try:
+                per_gb_power_watts = self.component_powers["memory"][mem_type][
+                    "per_gb_power_watts"
+                ]
+            except KeyError:
+                raise ValueError(
+                    f"Memory type '{mem_type}' not found in cluster config."
+                )
+
+            if cpu_type is None or cpu_type == "":
+                raise ValueError(f"Could not determine cpu_type for node {node_label}")
+
+            node_list.append(
+                Node(
+                    name=node_label,
+                    cpu_type=cpu_type,
+                    gpu_type=gpu_type,
+                    mem_type=mem_type,
+                    per_core_power_watts=per_core_power_watts,
+                    per_gpu_power_watts=per_gpu_power_watts,
+                    per_gb_power_watts=per_gb_power_watts,
+                )
+            )
+        return node_list

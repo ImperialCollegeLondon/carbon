@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from carbon.job import Job, JobState, UnknownJobIDError
-from carbon.job.factories import PBSJobFactory, hours
+from carbon.job.factories import PBSJobFactory, SLURMJobFactory, hours
 from carbon.node import Node
 
 
@@ -213,3 +213,94 @@ def test_file_job_factory_create(tmp_path: Path) -> None:
         node=job_data.node,
         state=job_data.state,
     )
+
+
+def _make_SLURMjob_json(job_id: str = "12345", mpijob: bool = False) -> bytes:
+    """Provide a minimal sacct JSON payload as bytes."""
+    nodes = "hx2-3-0" if not mpijob else "hx3-2-1,hx2-3-2"
+    job_data = {
+        "jobs": [
+            {
+                "job_id": job_id,
+                "state": {"current": "COMPLETED"},
+                "nodes": nodes,
+                "start": 1752058800,  # Wed Jul 09 12:00:00 2025
+                "time": {
+                    "elapsed": 7200,  # 2 hours
+                    "total": {"seconds": 14400},  # 4 cpu-hours
+                },
+                "tres": {
+                    "requested": [
+                        {"type": "mem", "count": 12288},  # 12GB in MB
+                        {"type": "gres", "name": "gpu", "count": 1},
+                    ]
+                },
+            }
+        ]
+    }
+    return json.dumps(job_data).encode()
+
+
+def test_from_SLURM_bulk_ignore_failed_true(monkeypatch) -> None:
+    """Ensure partial stdout from sacct is parsed when ignore_failed is True."""
+    # partial_bytes = json.dumps(_partial_job_json()).encode()
+
+    def fake_run(
+        cmd, shell, check, timeout, capture_output
+    ) -> subprocess.CalledProcessError:
+        # Simulate qstat returning exit code 153 (unknown job), but writing
+        # valid JSON for some jobs to stdout.
+        e = subprocess.CalledProcessError(1, cmd)
+        e.stdout = _make_SLURMjob_json("123")
+        e.stderr = b"Unknown job ID: 456"
+        raise e
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    factory = SLURMJobFactory()
+    jobs = factory.create(["123", "456"], ignore_failed=True)
+
+    assert len(jobs) == 1
+    assert jobs[0].id == "123"
+
+
+def test_SLURM_factory_bulk_ignore_failed_false_raises(monkeypatch) -> None:
+    """Verify an error is raised when ignore_failed is False and sacct fails."""
+    # partial_bytes = json.dumps(_partial_job_json()).encode()
+
+    def fake_run(
+        cmd, shell, check, timeout, capture_output
+    ) -> subprocess.CalledProcessError:
+        e = subprocess.CalledProcessError(1, cmd)
+        e.stdout = _make_SLURMjob_json("123")
+        e.stderr = b"Unknown job ID: 456"
+        raise e
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    factory = SLURMJobFactory()
+    with pytest.raises(UnknownJobIDError):
+        factory.create(["123", "456"], ignore_failed=False)
+
+
+@pytest.mark.parametrize(
+    "isMPIjob, first_node_name",
+    [(False, "hx2-3-0"), (True, "hx3-2-1")],
+)
+def test_SLURM_job_factory_parse_job(isMPIjob: bool, first_node_name: str) -> None:
+    """Job.fromSLURM parses sacct JSON and returns a Job with expected fields."""
+    mock_proc = Mock()
+    mock_proc.stdout = _make_SLURMjob_json("12345", isMPIjob)
+
+    factory = SLURMJobFactory()
+    with patch("carbon.job.factories.subprocess.run", return_value=mock_proc):
+        job = factory.create(["12345"])[0]
+
+    assert job.id == "12345"
+    assert job.starttime == datetime.fromtimestamp(1752058800)
+    assert job.runtime == 2.0
+    assert job.cputime == 4.0
+    assert job.gputime == 2.0
+    assert job.memtime == 24.0
+    # For MPI jobs, the first node in the list is taken
+    assert job.node == first_node_name
