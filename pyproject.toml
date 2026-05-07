@@ -88,13 +88,3 @@ pydocstyle.convention = "google"
 
 [project.scripts]
 carbon = "carbon.__main__:main"
-
-[project.entry-points."carbon.job_factory"]
-pbs = "carbon.job.factories:PBSJobFactory"
-dummy = "carbon.job.factories:DummyJobFactory"
-file = "carbon.job.factories:FileJobFactory"
-
-[project.entry-points."carbon.node_factory"]
-pbs = "carbon.node.factories:PBSNodeFactory"
-dummy = "carbon.node.factories:DummyNodeFactory"
-file = "carbon.node.factories:FileNodeFactory"

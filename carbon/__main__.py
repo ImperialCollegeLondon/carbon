@@ -29,14 +29,12 @@ from carbon.node.factories import (
 
 def get_node_factory_classes() -> dict[str, type[NodeFactory]]:
     """Get available node factory classes."""
-    # here is where you can do dynamic import gubbins to allow users to supply
-    # their own node factory classes
-    # for now, just return the built-in ones
     factories: dict[str, type[NodeFactory]] = dict(
         dummy=DummyNodeFactory, pbs=PBSNodeFactory, file=FileNodeFactory
     )
     for ep in entry_points(group="carbon.node_factory"):
-        factories[ep.name] = ep.load()
+        if ep.name not in factories:
+            factories[ep.name] = ep.load()
 
     return factories
 
@@ -48,7 +46,8 @@ def get_job_factory_classes() -> dict[str, type[JobFactory]]:
     )
 
     for ep in entry_points(group="carbon.job_factory"):
-        factories[ep.name] = ep.load()
+        if ep.name not in factories:
+            factories[ep.name] = ep.load()
 
     return factories
 
