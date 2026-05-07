@@ -45,7 +45,7 @@ def run(
             job instead of calling the CarbonIntensity API.
         ignore_failed (bool): If True, don't crash out when jobs cannot be parsed or
             analysed and don't add respective results to the results list.
-        min_runtime (float): Minimum runtime in seconds for a job to be considered
+        min_runtime (float): Minimum CPU time in seconds for a job to be considered
                             in carbon intensity calculations.
 
     Returns:
@@ -76,7 +76,7 @@ def run(
         # Fetch carbon intensity at job start time or use a provided value
         if average_intensity:
             intensity = average_intensity
-        elif job.runtime * 3600 < min_runtime:
+        elif job.cputime * 3600 < min_runtime:
             intensity = 0
         else:
             carbon_intensity = CarbonIntensity(job.starttime, region_id)
