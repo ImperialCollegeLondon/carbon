@@ -6,6 +6,7 @@ food consumption.
 """
 
 import pkgutil
+from importlib.metadata import entry_points
 from io import StringIO
 
 import click
@@ -29,15 +30,27 @@ from carbon.node.factories import (
 
 def get_node_factory_classes() -> dict[str, type[NodeFactory]]:
     """Get available node factory classes."""
-    # here is where you can do dynamic import gubbins to allow users to supply
-    # their own node factory classes
-    # for now, just return the built-in ones
-    return dict(dummy=DummyNodeFactory, pbs=PBSNodeFactory, file=FileNodeFactory)
+    factories: dict[str, type[NodeFactory]] = dict(
+        dummy=DummyNodeFactory, pbs=PBSNodeFactory, file=FileNodeFactory
+    )
+    for ep in entry_points(group="carbon.node_factory"):
+        if ep.name not in factories:
+            factories[ep.name] = ep.load()
+
+    return factories
 
 
 def get_job_factory_classes() -> dict[str, type[JobFactory]]:
     """Get available job factory classes."""
-    return dict(dummy=DummyJobFactory, pbs=PBSJobFactory, file=FileJobFactory)
+    factories: dict[str, type[JobFactory]] = dict(
+        dummy=DummyJobFactory, pbs=PBSJobFactory, file=FileJobFactory
+    )
+
+    for ep in entry_points(group="carbon.job_factory"):
+        if ep.name not in factories:
+            factories[ep.name] = ep.load()
+
+    return factories
 
 
 @click.command()
