@@ -147,10 +147,16 @@ def test_energy_calculate() -> None:
         per_gb_power_watts=2.0,
     )
 
-    expected = ((10.0 * 2.0) + (200.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
+    expected_cpu = (10.0 * 2.0) * 1.5 / 1000.0
+    expected_gpu = (200.0 * 2.0) * 1.5 / 1000.0
+    expected_memory = (32.0 * 2.0) * 1.5 / 1000.0
+    expected_total = expected_cpu + expected_gpu + expected_memory
     result = job.calculate_energy(node, 1.5)
 
-    assert np.isclose(result, expected, atol=1e-9)
+    assert np.isclose(result.cpu, expected_cpu, atol=1e-9)
+    assert np.isclose(result.gpu, expected_gpu, atol=1e-9)
+    assert np.isclose(result.memory, expected_memory, atol=1e-9)
+    assert np.isclose(result.total, expected_total, atol=1e-9)
 
 
 def test_energy_calculate_no_gpu() -> None:
@@ -174,10 +180,16 @@ def test_energy_calculate_no_gpu() -> None:
         per_gb_power_watts=2.0,
     )
 
-    expected = ((10.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
+    expected_cpu = (10.0 * 2.0) * 1.5 / 1000.0
+    expected_gpu = 0.0
+    expected_memory = (32.0 * 2.0) * 1.5 / 1000.0
+    expected_total = expected_cpu + expected_gpu + expected_memory
     result = job.calculate_energy(node, 1.5)
 
-    assert np.isclose(result, expected, atol=1e-9)
+    assert np.isclose(result.cpu, expected_cpu, atol=1e-9)
+    assert np.isclose(result.gpu, expected_gpu, atol=1e-9)
+    assert np.isclose(result.memory, expected_memory, atol=1e-9)
+    assert np.isclose(result.total, expected_total, atol=1e-9)
 
 
 def test_file_job_factory_create(tmp_path: Path) -> None:
