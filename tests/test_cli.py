@@ -8,6 +8,7 @@ from click.testing import CliRunner
 from carbon import RunResult
 from carbon.__main__ import main
 from carbon.job import Job, JobState
+from carbon.job.job import EnergyBreakdown
 from carbon.node import Node
 
 
@@ -37,7 +38,11 @@ def make_result(job_id: str) -> RunResult:
         per_gb_power_watts=0.5,
     )
     return RunResult(
-        node=node, emissions=1.0, energy_consumed=1.0, job=job, carbon_intensity=137.0
+        node=node,
+        emissions=1.0,
+        job=job,
+        energy_breakdown=EnergyBreakdown(cpu=0, gpu=0, memory=0, total=1.0),
+        carbon_intensity=137.0,
     )
 
 

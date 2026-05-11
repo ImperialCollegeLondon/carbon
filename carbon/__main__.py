@@ -19,6 +19,7 @@ from carbon.job.factories import (
     JobFactory,
     PBSJobFactory,
 )
+from carbon.job.job import EnergyBreakdown
 from carbon.node.factories import (
     DummyNodeFactory,
     FileNodeFactory,
@@ -236,7 +237,7 @@ def main(
             total_gputime += job.gputime
             total_memtime += job.memtime
 
-            total_energy_consumed += result.energy_consumed
+            total_energy_consumed += result.energy_breakdown.total
             total_emissions += result.emissions
             intensity_list.append(result.carbon_intensity)
 
@@ -257,7 +258,9 @@ def main(
         agg_result = RunResult(
             node=results[0].node,  # Just use first node for now
             emissions=total_emissions,
-            energy_consumed=total_energy_consumed,
+            energy_breakdown=EnergyBreakdown(
+                cpu=0, gpu=0, memory=0, total=total_energy_consumed
+            ),
             job=agg_job,
             carbon_intensity=sum(intensity_list) / len(intensity_list),
         )
@@ -288,7 +291,7 @@ def output_result(
     """
     node = result.node
     emissions = result.emissions
-    energy_consumed = result.energy_consumed
+    total_energy_consumed = result.energy_breakdown.total
     job = result.job
     intensity = result.carbon_intensity
 
@@ -325,7 +328,12 @@ def output_result(
         f"Estimated energy consumed from {job.cputime:.2f} CPU-hours "
         f"and {job.gputime:.2f} GPU-hours "
         f"and {job.memtime:.2f} GB-hours "
-        f"is {energy_consumed:.2f} kWh"
+        f"is {total_energy_consumed:.2f} kWh"
+    )
+    print(
+        f"  CPU: {result.energy_breakdown.cpu:.2f} kWh, "
+        f"GPU: {result.energy_breakdown.gpu:.2f} kWh, "
+        f"Memory: {result.energy_breakdown.memory:.2f} kWh"
     )
     if average_intensity:
         print(f"Using average carbon intensity of {config.average_intensity} gCO2/kWh")
