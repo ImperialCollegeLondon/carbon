@@ -68,3 +68,4 @@ class ClusterConfig(BaseModel):  # type: ignore[explicit-any]
     scheduler: str
     scheduler_config: dict[str, Any]  # type: ignore[explicit-any]
     average_intensity: NonNegativeFloat | None = None
+    exporters: list[str] = []

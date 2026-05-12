@@ -13,6 +13,7 @@ import click
 
 from carbon import RunResult, run
 from carbon.clusterconfig import ClusterConfig
+from carbon.exporter import CSVExporter, Exporter
 from carbon.job.factories import (
     DummyJobFactory,
     FileJobFactory,
@@ -53,6 +54,11 @@ def get_job_factory_classes() -> dict[str, type[JobFactory]]:
     return factories
 
 
+def get_exporter_classes() -> dict[str, type[Exporter]]:
+    """Get available exporter classes."""
+    return dict(csv=CSVExporter)
+
+
 @click.command()
 @click.option("-v", "--verbose", is_flag=True, help="Enables verbose output")
 @click.option(
@@ -66,6 +72,7 @@ def get_job_factory_classes() -> dict[str, type[JobFactory]]:
     type=click.Path(),
     help="Path to the cluster configuration file.",
 )
+@click.option("--exporter", type=str, default=None, help="Export results csv file")
 @click.option(
     "--average-intensity",
     is_flag=True,
@@ -92,6 +99,7 @@ def main(
     average_intensity: bool,
     split_jobs: bool,
     ignore_failed: bool,
+    exporter: str | None,
 ) -> None:
     """Estimate and display the carbon emissions of a compute job.
 
@@ -198,6 +206,16 @@ def main(
                 "completed portion of the job and may not reflect total emissions."
             )
             break
+
+    exporters_to_run = list(config.exporters)
+    if exporter:
+        exporters_to_run.append(exporter)
+    for name in exporters_to_run:
+        exporter_class = get_exporter_classes().get(name)
+        if exporter_class is None:
+            print(f"Error: Unknown exporter {name}")
+            sys.exit(1)
+        exporter_class.from_config({}).export(results)
 
     # Warn if any jobs failed to be analysed
     if failed_count > 0:
