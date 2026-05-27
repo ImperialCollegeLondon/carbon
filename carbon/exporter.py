@@ -68,7 +68,7 @@ class CSVExporter(Exporter):
                         "gputime",
                         "memtime",
                         "node",
-                        "energy_consumed",
+                        "energy_breakdown_total_kwh",
                         "carbon_intensity",
                         "emissions",
                     ]
@@ -83,7 +83,7 @@ class CSVExporter(Exporter):
                         result.job.gputime,
                         result.job.memtime,
                         result.node.name,
-                        result.energy_consumed,
+                        result.energy_breakdown.total,
                         result.carbon_intensity,
                         result.emissions,
                     ]

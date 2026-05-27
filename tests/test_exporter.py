@@ -6,6 +6,7 @@ from datetime import datetime
 from carbon import RunResult
 from carbon.exporter import CSVExporter
 from carbon.job import Job
+from carbon.job.job import EnergyBreakdown
 from carbon.node import Node
 
 
@@ -33,8 +34,13 @@ def make_result(job_id: str) -> RunResult:
         per_gpu_power_watts=0.0,
         per_gb_power_watts=0.5,
     )
+    energy_breakdown = EnergyBreakdown(cpu=0.5, gpu=0.0, memory=0.5, total=1.0)
     return RunResult(
-        node=node, emissions=1.0, energy_consumed=1.0, job=job, carbon_intensity=137.0
+        node=node,
+        emissions=1.0,
+        energy_breakdown=energy_breakdown,
+        job=job,
+        carbon_intensity=137.0,
     )
 
 
@@ -56,7 +62,7 @@ def test_csv_exporter_write_rows(tmp_path) -> None:
         "gputime",
         "memtime",
         "node",
-        "energy_consumed",
+        "energy_breakdown_total_kwh",
         "carbon_intensity",
         "emissions",
     ]
@@ -96,7 +102,7 @@ def test_csv_exporter_no_duplicate_header(tmp_path) -> None:
         "gputime",
         "memtime",
         "node",
-        "energy_consumed",
+        "energy_breakdown_total_kwh",
         "carbon_intensity",
         "emissions",
     ]
