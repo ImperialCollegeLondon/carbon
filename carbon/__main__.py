@@ -208,7 +208,7 @@ def main(
             break
 
     exporters_to_run = list(config.exporters)
-    if exporter:
+    if exporter and exporter not in exporters_to_run:
         exporters_to_run.append(exporter)
     for name in exporters_to_run:
         exporter_class = get_exporter_classes().get(name)

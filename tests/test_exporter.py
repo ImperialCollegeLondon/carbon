@@ -2,11 +2,9 @@
 
 import csv
 from datetime import datetime
-from pathlib import Path
 
-import pytest
-from carbon.exporter import CSVExporter
 from carbon import RunResult
+from carbon.exporter import CSVExporter
 from carbon.job import Job
 from carbon.node import Node
 
@@ -49,9 +47,21 @@ def test_csv_exporter_write_rows(tmp_path) -> None:
     with open(output_file) as csvfile:
         rows = list(csv.reader(csvfile))
 
-    assert len(rows) == 2
-    assert rows[0][0] == "job1"
-    assert rows[1][0] == "job2"
+    assert len(rows) == 3  # header + 2 jobs
+    assert rows[0] == [
+        "job_id",
+        "starttime",
+        "runtime",
+        "cputime",
+        "gputime",
+        "memtime",
+        "node",
+        "energy_consumed",
+        "carbon_intensity",
+        "emissions",
+    ]
+    assert rows[1][0] == "job1"
+    assert rows[2][0] == "job2"
 
 
 def test_csv_exporter_from_config(tmp_path) -> None:
@@ -65,3 +75,28 @@ def test_csv_exporter_default_output_path() -> None:
     """Test that CSVExporter uses default output path if not specified."""
     exporter = CSVExporter.from_config({})
     assert exporter.output_path == "carbon_output.csv"
+
+
+def test_csv_exporter_no_duplicate_header(tmp_path) -> None:
+    """Test that header is not written twice when appending."""
+    output_file = tmp_path / "test_output.csv"
+    exporter = CSVExporter(str(output_file))
+    exporter.export([make_result("job1")])
+    exporter.export([make_result("job2")])
+
+    with open(output_file) as csvfile:
+        rows = list(csv.reader(csvfile))
+
+    assert len(rows) == 3  # header + 2 jobs
+    assert rows[0] == [
+        "job_id",
+        "starttime",
+        "runtime",
+        "cputime",
+        "gputime",
+        "memtime",
+        "node",
+        "energy_consumed",
+        "carbon_intensity",
+        "emissions",
+    ]
