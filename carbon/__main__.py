@@ -75,7 +75,7 @@ def get_exporter_classes() -> dict[str, type[Exporter]]:
 @click.option(
     "--average-intensity",
     is_flag=True,
-    help="Use the UK average value for the carbon intensity (137 gCO2/kWh)",
+    help="Use average carbon intensity value if configured",
 )
 @click.option(
     "--split-jobs",
