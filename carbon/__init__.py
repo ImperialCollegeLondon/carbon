@@ -32,6 +32,7 @@ def run(
     region_id: int,
     average_intensity: float | None,
     ignore_failed: bool,
+    min_cputime: float = 600,
 ) -> list[RunResult]:
     """Estimate the carbon emissions of compute jobs.
 
@@ -45,6 +46,8 @@ def run(
             job instead of calling the CarbonIntensity API.
         ignore_failed (bool): If True, don't crash out when jobs cannot be parsed or
             analysed and don't add respective results to the results list.
+        min_cputime (float): Minimum CPU time in seconds for a job to be considered
+                            in carbon intensity calculations.
 
     Returns:
         list[RunResult]: The results of the carbon calculations.
@@ -74,6 +77,8 @@ def run(
         # Fetch carbon intensity at job start time or use a provided value
         if average_intensity:
             intensity = average_intensity
+        elif job.cputime * 3600 < min_cputime:
+            intensity = 0
         else:
             carbon_intensity = CarbonIntensity(job.starttime, region_id)
             intensity = carbon_intensity.fetch()

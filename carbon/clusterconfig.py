@@ -78,5 +78,6 @@ class ClusterConfig(BaseModel):  # type: ignore[explicit-any]
     scheduler: str
     scheduler_config: dict[str, Any]  # type: ignore[explicit-any]
     average_intensity: NonNegativeFloat | None = None
+    min_cputime: NonNegativeFloat = 600
     exporters: list[str] = []
     exporter_config: dict[str, dict[str, Any]] = Field(default_factory=dict)  # type: ignore[explicit-any]

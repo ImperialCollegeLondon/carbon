@@ -177,6 +177,7 @@ def main(
             config.region_id,
             config.average_intensity if average_intensity else None,
             ignore_failed,
+            config.min_cputime,
         )
         failed_count = len(job_ids) - len(results)
     except (UnknownJobIDError, MalformedJobIDError) as e:
