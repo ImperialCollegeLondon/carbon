@@ -6,7 +6,7 @@ import subprocess
 from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Protocol, Self
+from typing import Protocol, Self
 
 import pydantic
 import yaml
@@ -57,7 +57,7 @@ class JobFactory(Protocol):
 
     @classmethod
     @abstractmethod
-    def from_config(cls, config: dict[str, Any]) -> Self:  # type: ignore[explicit-any]
+    def from_config(cls, config: dict[str, object]) -> Self:
         """Create an instance of the class from configuration data."""
 
     @abstractmethod
@@ -104,9 +104,9 @@ class DummyJobFactory(JobFactory):
     node: str
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> Self:  # type: ignore[explicit-any]
+    def from_config(cls, config: dict[str, object]) -> Self:
         """Initialize from configuration data."""
-        validated_config = DummySchedulerConfig(**config)
+        validated_config = DummySchedulerConfig.model_validate(config)
         return cls(
             start_time=validated_config.start_time,
             run_time=validated_config.run_time,
@@ -178,7 +178,7 @@ class PBSJobFactory(JobFactory):
     """A job factory for PBS scheduler."""
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> Self:  # type: ignore[explicit-any]
+    def from_config(cls, config: dict[str, object]) -> Self:
         """Initialize the PBS job factory."""
         return cls()
 
@@ -396,7 +396,7 @@ class FileJobFactory(JobFactory):
     """A job factory that reads job data from YAML files."""
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> Self:  # type: ignore[explicit-any]
+    def from_config(cls, config: dict[str, object]) -> Self:
         """Initialize the File job factory."""
         # no config used currently
         return cls()

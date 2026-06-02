@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PositiveFloat
 
@@ -53,7 +52,7 @@ class CSVExporterConfig(BaseModel):
     output_path: Path = Path("carbon_output.csv")
 
 
-class ClusterConfig(BaseModel):  # type: ignore[explicit-any]
+class ClusterConfig(BaseModel):
     """Configuration for an HPC cluster and hosting data center.
 
     Attributes:
@@ -76,7 +75,7 @@ class ClusterConfig(BaseModel):  # type: ignore[explicit-any]
     gpus: dict[str, dict[str, float]]
     memory: dict[str, dict[str, float]]
     scheduler: str
-    scheduler_config: dict[str, Any]  # type: ignore[explicit-any]
+    scheduler_config: dict[str, object]
     average_intensity: NonNegativeFloat | None = None
     exporters: list[str] = []
-    exporter_config: dict[str, dict[str, Any]] = Field(default_factory=dict)  # type: ignore[explicit-any]
+    exporter_config: dict[str, dict[str, object]] = Field(default_factory=dict)

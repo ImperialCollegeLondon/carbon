@@ -4,7 +4,7 @@ import subprocess
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol, Self
+from typing import Protocol, Self
 
 import pydantic
 import yaml
@@ -20,10 +20,8 @@ class NodeFactory(Protocol):
 
     @classmethod
     @abstractmethod
-    def from_config(  # type: ignore[explicit-any]
-        cls,
-        config: dict[str, Any],
-        component_powers: ComponentPower,
+    def from_config(
+        cls, config: dict[str, object], component_powers: ComponentPower
     ) -> Self:
         """Initialize the NodeFactoryBase with a config.
 
@@ -102,10 +100,8 @@ class DummyNodeFactory(NodeFactory):
     component_powers: ComponentPower
 
     @classmethod
-    def from_config(  # type: ignore[explicit-any]
-        cls,
-        config: dict[str, Any],
-        component_powers: ComponentPower,
+    def from_config(
+        cls, config: dict[str, object], component_powers: ComponentPower
     ) -> Self:
         """Initialize the DummyNodeFactory with a config.
 
@@ -113,7 +109,7 @@ class DummyNodeFactory(NodeFactory):
             config (dict): Configuration dictionary (not used in dummy factory).
             component_powers (dict): Dictionary of power usages for components.
         """
-        validated_config = DummySchedulerConfig(**config)
+        validated_config = DummySchedulerConfig.model_validate(config)
         return cls(
             cpu_type=validated_config.cpu_type,
             gpu_type=validated_config.gpu_type,
@@ -150,10 +146,8 @@ class PBSNodeFactory(NodeFactory):
     component_powers: ComponentPower
 
     @classmethod
-    def from_config(  # type: ignore[explicit-any]
-        cls,
-        config: dict[str, Any],
-        component_powers: ComponentPower,
+    def from_config(
+        cls, config: dict[str, object], component_powers: ComponentPower
     ) -> Self:
         """Initialize the DummyNodeFactory with a config.
 
@@ -221,10 +215,8 @@ class FileNodeFactory(NodeFactory):
     node_data_file_path: Path
 
     @classmethod
-    def from_config(  # type: ignore[explicit-any]
-        cls,
-        config: dict[str, Any],
-        component_powers: ComponentPower,
+    def from_config(
+        cls, config: dict[str, object], component_powers: ComponentPower
     ) -> Self:
         """Initialize the FileNodeFactory with a config.
 
@@ -232,7 +224,7 @@ class FileNodeFactory(NodeFactory):
             config (dict): Configuration dictionary.
             component_powers (dict): Dictionary of power usages for components.
         """
-        validated_config = FileSchedulerConfig(**config)
+        validated_config = FileSchedulerConfig.model_validate(config)
 
         return cls(
             component_powers=component_powers,
