@@ -72,7 +72,6 @@ def get_exporter_classes() -> dict[str, type[Exporter]]:
     type=click.Path(),
     help="Path to the cluster configuration file.",
 )
-@click.option("--exporter", type=str, default=None, help="Export results csv file")
 @click.option(
     "--average-intensity",
     is_flag=True,
@@ -99,7 +98,6 @@ def main(
     average_intensity: bool,
     split_jobs: bool,
     ignore_failed: bool,
-    exporter: str | None,
 ) -> None:
     """Estimate and display the carbon emissions of a compute job.
 
@@ -207,10 +205,7 @@ def main(
             )
             break
 
-    exporters_to_run = list(config.exporters)
-    if exporter and exporter not in exporters_to_run:
-        exporters_to_run.append(exporter)
-    for name in exporters_to_run:
+    for name in config.exporters:
         exporter_class = get_exporter_classes().get(name)
         if exporter_class is None:
             print(f"Error: Unknown exporter {name}")
