@@ -67,31 +67,6 @@ def get_exporter_classes() -> dict[str, type[Exporter]]:
     return dict(csv=CSVExporter)
 
 
-def food_line_formatter(comparison: ComparisonRow) -> str:
-    """Format a line of the food comparisons output."""
-    if comparison.unit:
-        return f"{comparison.amount:.1f} {comparison.unit} of {comparison.item}"
-    else:
-        return f"{comparison.amount:.1f} {comparison.item}"
-
-
-def travel_line_formatter(comparison: ComparisonRow) -> str:
-    """Format a line of the travel comparisons output."""
-    return f"{comparison.item} {comparison.amount:.1f} km {comparison.unit}"
-
-
-def comparison_output_formatter(
-    comparisons: list[ComparisonRow],
-    formatter: Callable[[ComparisonRow], str],
-    comparison_type: str,
-) -> str:
-    """Format the comparisons output using the given line formatter."""
-    output = f"\n----- {comparison_type} Comparisons -----\n"
-    for comparison in comparisons:
-        output += formatter(comparison) + "\n"
-    return output
-
-
 @click.command()
 @click.option("-v", "--verbose", is_flag=True, help="Enables verbose output")
 @click.option(
@@ -311,6 +286,31 @@ def main(
             carbon_intensity=sum(intensity_list) / len(intensity_list),
         )
         output_result(agg_result, compare, verbose, average_intensity, config, True)
+
+
+def food_line_formatter(comparison: ComparisonRow) -> str:
+    """Format a line of the food comparisons output."""
+    if comparison.unit:
+        return f"{comparison.amount:.1f} {comparison.unit} of {comparison.item}"
+    else:
+        return f"{comparison.amount:.1f} {comparison.item}"
+
+
+def travel_line_formatter(comparison: ComparisonRow) -> str:
+    """Format a line of the travel comparisons output."""
+    return f"{comparison.item} {comparison.amount:.1f} km {comparison.unit}"
+
+
+def comparison_output_formatter(
+    comparisons: list[ComparisonRow],
+    formatter: Callable[[ComparisonRow], str],
+    comparison_type: str,
+) -> str:
+    """Format the comparisons output using the given line formatter."""
+    output = f"\n----- {comparison_type} Comparisons -----\n"
+    for comparison in comparisons:
+        output += formatter(comparison) + "\n"
+    return output
 
 
 def output_result(
