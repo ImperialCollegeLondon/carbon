@@ -23,10 +23,10 @@ class EmissionsComparison(ABC):
         """Calculates the amount of each item that would emit the same emissions.
 
         Args:
-            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
+            emissions_gco2: The emissions in grams of CO2 to compare against.
 
         Returns:
-            list[ComparisonRow]: List of (item, amount, unit/note) tuples.
+            List of (item, amount, unit/note) tuples.
         """
         pass
 
@@ -49,10 +49,10 @@ class Travel(EmissionsComparison):
         """Calculates the distance via each method that would emit the same emissions.
 
         Args:
-            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
+            emissions_gco2: The emissions in grams of CO2 to compare against.
 
         Returns:
-            list[tuple[str, float, str]]: List of (method, kilometers, note) tuples.
+            List of (method, kilometers, note) tuples.
         """
         return [
             ComparisonRow(comp.method, emissions_gco2 / comp.gCO2e_per_km, comp.note)
@@ -79,10 +79,10 @@ class Food(EmissionsComparison):
         """Calculate the number of portions that would emit the same emissions.
 
         Args:
-            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
+            emissions_gco2: The emissions in grams of CO2 to compare against.
 
         Returns:
-            list[tuple[str, float, str]]: List of (food, portions, portion_name) tuples.
+            List of (food, portions, portion_name) tuples.
         """
         return [
             ComparisonRow(

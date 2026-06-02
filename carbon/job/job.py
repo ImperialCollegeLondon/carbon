@@ -57,11 +57,11 @@ class Job:
         """Calculate energy consumption in kilowatt-hours for a compute job.
 
         Args:
-            node (Node): The compute node the job was executed on.
-            pue (float): Power Usage Effectiveness of the data center.
+            node: The compute node the job was executed on.
+            pue: Power Usage Effectiveness of the data center.
 
         Returns:
-            EnergyBreakdown: The energy consumed broken down by component.
+            The energy consumed broken down by component.
         """
         cpu = node.per_core_power_watts * self.cputime * pue / 1000.0
         gpu = node.per_gpu_power_watts * self.gputime * pue / 1000.0

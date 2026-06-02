@@ -36,14 +36,14 @@ def run(
     """Estimate the carbon emissions of compute jobs.
 
     Args:
-        job_ids (list[str]): The list of job identifiers to analyze.
-        node_factory (NodeFactory): The class used to construct node objects.
-        job_factory (JobFactory): The class used to construct job objects.
-        pue (float): Power Usage Effectiveness of the data center.
-        region_id (int): Region ID for carbon intensity API (1-17)
-        average_intensity (float | None): If provided use as the carbon intensity of the
+        job_ids: The list of job identifiers to analyze.
+        node_factory: The class used to construct node objects.
+        job_factory: The class used to construct job objects.
+        pue: Power Usage Effectiveness of the data center.
+        region_id: Region ID for carbon intensity API (1-17)
+        average_intensity: If provided use as the carbon intensity of the
             job instead of calling the CarbonIntensity API.
-        ignore_failed (bool): If True, don't crash out when jobs cannot be parsed or
+        ignore_failed: If True, don't crash out when jobs cannot be parsed or
             analysed and don't add respective results to the results list.
 
     Returns:

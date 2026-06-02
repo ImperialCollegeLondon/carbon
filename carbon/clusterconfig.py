@@ -10,15 +10,15 @@ class DummySchedulerConfig(BaseModel):
     """Optional dummy job specification for testing and development purposes.
 
     Attributes:
-        start_time (datetime): Start time of the job in ISO format.
-        cpu_time (float): CPU time used by the job in cpu core-hours.
-        memory_usage (float): Memory allocated to the job in GB.
-        run_time (float): Total run time of the job in hours.
-        ngpus (int): Number of GPUs used by the job.
-        node (str): Label of the node the job was executed on.
-        cpu_type (str): CPU type for dummy job.
-        gpu_type (str | None): GPU type for dummy job, or None if not present.
-        mem_type (str): Memory type for dummy job
+        start_time: Start time of the job in ISO format.
+        cpu_time: CPU time used by the job in cpu core-hours.
+        memory_usage: Memory allocated to the job in GB.
+        run_time: Total run time of the job in hours.
+        ngpus: Number of GPUs used by the job.
+        node: Label of the node the job was executed on.
+        cpu_type: CPU type for dummy job.
+        gpu_type: GPU type for dummy job, or None if not present.
+        mem_type: Memory type for dummy job
     """
 
     start_time: datetime
@@ -36,7 +36,7 @@ class FileSchedulerConfig(BaseModel):
     """File-based scheduler configuration.
 
     Attributes:
-        node_data_file_path (Path): Path to the file containing node data.
+        node_data_file_path: Path to the file containing node data.
     """
 
     node_data_file_path: Path
@@ -46,7 +46,7 @@ class CSVExporterConfig(BaseModel):
     """Configuration for exporting results to CSV files.
 
     Attributes:
-        output_path (Path): Path where CSV output will be saved.
+        output_path: Path where CSV output will be saved.
     """
 
     output_path: Path = Path("carbon_output.csv")
@@ -56,16 +56,18 @@ class ClusterConfig(BaseModel):
     """Configuration for an HPC cluster and hosting data center.
 
     Attributes:
-        cluster_name (str): Name of the HPC cluster.
-        region_id (int): Region ID for carbon intensity API (1-17).
-        pue (float): Power Usage Effectiveness of the data center.
-        cpus (dict): Dictionary of CPU types and their power usage.
-        gpus (dict): Dictionary of GPU types and their power usage.
-        memory (dict): Dictionary with memory types and their power usage.
-        scheduler (str): Scheduler type used by the cluster.
-        scheduler_config (dict): Scheduler-specific configuration parameters.
-        average_intensity (float | None): Optional average carbon intensity
+        cluster_name: Name of the HPC cluster.
+        region_id: Region ID for carbon intensity API (1-17).
+        pue: Power Usage Effectiveness of the data center.
+        cpus: Dictionary of CPU types and their power usage.
+        gpus: Dictionary of GPU types and their power usage.
+        memory: Dictionary with memory types and their power usage.
+        scheduler: Scheduler type used by the cluster.
+        scheduler_config: Scheduler-specific configuration parameters.
+        average_intensity: Optional average carbon intensity
             in gCO2eq/kWh for the region.
+        exporters: List of exporter types to use for output.
+        exporter_config: Dictionary of exporter-specific configuration parameters.
     """
 
     cluster_name: str

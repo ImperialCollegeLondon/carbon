@@ -111,14 +111,14 @@ def main(
 
     \b
     Args:
-        job_ids (tuple[str]): Identifier(s) of the job(s) to analyze.
-        compare (bool): If True, compare emissions to other activities.
-        verbose (bool): If True, provide verbose output.
-        config_path (str): Path to the cluster configuration file.
-        average_intensity (bool): If True, use carbon intensity value from config file.
-        split_jobs (bool): If True, show separate results for each job when multiple IDs
+        job_ids: Identifier(s) of the job(s) to analyze.
+        compare: If True, compare emissions to other activities.
+        verbose: If True, provide verbose output.
+        config_path: Path to the cluster configuration file.
+        average_intensity: If True, use carbon intensity value from config file.
+        split_jobs: If True, show separate results for each job when multiple IDs
             provided.
-        ignore_failed (bool): If True, quietly ignore jobs that can't be parsed or
+        ignore_failed: If True, quietly ignore jobs that can't be parsed or
             analysed correctly, rather than crashing out.
 
     \b
@@ -324,13 +324,13 @@ def output_result(
     """Output a carbon estimation result to the user.
 
     Args:
-        result (RunResult): The result to display
-        compare (bool): If True, compare emissions to other activities.
-        verbose (bool): If True, provide verbose output.
-        average_intensity (bool): If True, indicate that default carbon intensity value
+        result: The result to display
+        compare: If True, compare emissions to other activities.
+        verbose: If True, provide verbose output.
+        average_intensity: If True, indicate that default carbon intensity value
             was used.
-        config (ClusterConfig): The cluster configuration.
-        isaggregate (bool): If True, show average carbon intensity.
+        config: The cluster configuration.
+        isaggregate: If True, show average carbon intensity.
 
     Returns:
         None

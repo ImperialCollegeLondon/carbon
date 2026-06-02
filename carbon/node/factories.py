@@ -26,8 +26,8 @@ class NodeFactory(Protocol):
         """Initialize the NodeFactoryBase with a config.
 
         Args:
-            config (dict): Configuration dictionary.
-            component_powers (dict): Dictionary of power usages for components.
+            config: Configuration dictionary.
+            component_powers: Dictionary of power usages for components.
         """
 
     @abstractmethod
@@ -45,14 +45,14 @@ class NodeFactory(Protocol):
         """Create a Node object given hardware types.
 
         Args:
-            name (str): The node label.
-            cpu_type (str): The CPU model.
-            gpu_type (str | None): The GPU model, or None if not present.
-            mem_type (str): The memory type.
-            component_powers (dict): Dictionary of power usages for components.
+            name: The node label.
+            cpu_type: The CPU model.
+            gpu_type: The GPU model, or None if not present.
+            mem_type: The memory type.
+            component_powers: Dictionary of power usages for components.
 
         Returns:
-            Node: An instance of Node with hardware and power info.
+            An instance of Node with hardware and power info.
         """
         try:
             per_core_power_watts = component_powers["cpus"][cpu_type][
@@ -106,8 +106,8 @@ class DummyNodeFactory(NodeFactory):
         """Initialize the DummyNodeFactory with a config.
 
         Args:
-            config (dict): Configuration dictionary (not used in dummy factory).
-            component_powers (dict): Dictionary of power usages for components.
+            config: Configuration dictionary (not used in dummy factory).
+            component_powers: Dictionary of power usages for components.
         """
         validated_config = DummySchedulerConfig.model_validate(config)
         return cls(
@@ -122,10 +122,10 @@ class DummyNodeFactory(NodeFactory):
         """Create a dummy Node object.
 
         Args:
-            node_labels (list[str]): The label of the node to create.
+            node_labels: The label of the node to create.
 
         Returns:
-            Node: An instance of Node with dummy hardware and power info.
+            An instance of Node with dummy hardware and power info.
         """
         return [
             self._make_node(
@@ -152,8 +152,8 @@ class PBSNodeFactory(NodeFactory):
         """Initialize the DummyNodeFactory with a config.
 
         Args:
-            config (dict): Configuration dictionary (not used in dummy factory).
-            component_powers (dict): Dictionary of power usages for components.
+            config: Configuration dictionary (not used in dummy factory).
+            component_powers: Dictionary of power usages for components.
         """
         # no use for the config here currently but this could be used to pass in site
         # specific configuration in the future
@@ -163,10 +163,10 @@ class PBSNodeFactory(NodeFactory):
         """Create a Node object by fetching info from PBS and cluster config.
 
         Args:
-            node_labels (list[str]): The labels of the nodes to query.
+            node_labels: The labels of the nodes to query.
 
         Returns:
-            list[Node]: A list of Node instances with hardware and power info.
+            A list of Node instances with hardware and power info.
         """
         # list of object ids passed to qmgr should be comma-seperated
         cmd = 'qmgr -c "list node ' + ",".join(node_labels) + '"'
@@ -221,8 +221,8 @@ class FileNodeFactory(NodeFactory):
         """Initialize the FileNodeFactory with a config.
 
         Args:
-            config (dict): Configuration dictionary.
-            component_powers (dict): Dictionary of power usages for components.
+            config: Configuration dictionary.
+            component_powers: Dictionary of power usages for components.
         """
         validated_config = FileSchedulerConfig.model_validate(config)
 
@@ -242,10 +242,10 @@ class FileNodeFactory(NodeFactory):
         """Create a Node object by fetching info from a file.
 
         Args:
-            node_labels (list[str]): The labels of the nodes to query.
+            node_labels: The labels of the nodes to query.
 
         Returns:
-            list[Node]: A list of Node instances with hardware and power info.
+            A list of Node instances with hardware and power info.
         """
         if len(node_labels) != 1:
             raise ValueError(

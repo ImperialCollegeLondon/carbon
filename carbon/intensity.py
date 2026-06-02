@@ -21,17 +21,17 @@ class CarbonIntensity:
     for a given time and region from the Carbon Intensity API.
 
     Attributes:
-        region_id (int): The region ID for the API.
-        _stime (str): Start time in ISO format for the API query.
-        _stime_plus (str): End time in ISO format for the API query.
+        region_id: The region ID for the API.
+        _stime: Start time in ISO format for the API query.
+        _stime_plus: End time in ISO format for the API query.
     """
 
     def __init__(self, time: datetime, region_id: int) -> None:
         """Initialize the CarbonIntensity object.
 
         Args:
-            time (datetime): The time for which to fetch carbon intensity data.
-            region_id (int): The region ID for the API.
+            time: The time for which to fetch carbon intensity data.
+            region_id: The region ID for the API.
         """
         self.region_id = region_id
         self._stime = time.strftime("%Y-%m-%dT%H:%MZ")
@@ -41,7 +41,7 @@ class CarbonIntensity:
         """Fetch carbon intensity data from the API for the specified time and region.
 
         Returns:
-            float: The forecasted carbon intensity in gCO2/kWh.
+            The forecasted carbon intensity in gCO2/kWh.
 
         Raises:
             ValueError: If the API request fails or returns an error status.

@@ -40,7 +40,7 @@ class UnsupportedJobType(ValueError):
         """Initialize the UnsupportedJobType exception.
 
         Args:
-            job_type (str): The unsupported job type.
+            job_type: The unsupported job type.
         """
         super().__init__(f"Unsupported job type: {job_type}")
         self.job_type = job_type
@@ -65,10 +65,10 @@ class JobFactory(Protocol):
         """Check if the job ID corresponds to an array job.
 
         Args:
-            job_id (str): The job ID to check.
+            job_id: The job ID to check.
 
         Returns:
-            bool: True if the job ID is for an array job, False otherwise.
+            True if the job ID is for an array job, False otherwise.
         """
 
     @abstractmethod
@@ -76,10 +76,10 @@ class JobFactory(Protocol):
         """Split an array job ID into its sub-job IDs.
 
         Args:
-            job_id (str): The array job ID to split.
+            job_id: The array job ID to split.
 
         Returns:
-            list[str]: A list of sub-job IDs.
+            A list of sub-job IDs.
         """
 
     @abstractmethod
@@ -87,8 +87,8 @@ class JobFactory(Protocol):
         """Create multiple Job instances from a list of job IDs.
 
         Args:
-            job_ids (list[str]): A list of job IDs.
-            ignore_failed (bool): Whether to ignore failed job creations.
+            job_ids: A list of job IDs.
+            ignore_failed: Whether to ignore failed job creations.
         """
 
 
@@ -134,8 +134,8 @@ class DummyJobFactory(JobFactory):
         """Create dummy Job instances for the given job IDs.
 
         Args:
-            job_ids (list[str]): The job identifiers to create.
-            ignore_failed (bool): Ignored in this dummy implementation.
+            job_ids: The job identifiers to create.
+            ignore_failed: Ignored in this dummy implementation.
         """
         return [
             Job(
@@ -155,10 +155,10 @@ def hours(time: str) -> float:
     """Convert a time string in HH:MM:SS format to hours.
 
     Args:
-        time (str): Time string in the format 'HH:MM:SS'.
+        time: Time string in the format 'HH:MM:SS'.
 
     Returns:
-        float: The time in hours.
+        The time in hours.
     """
     h, m, s = time.split(":")
     return float(h) + float(m) / 60.0 + float(s) / 3600.0
@@ -232,12 +232,12 @@ class PBSJobFactory(JobFactory):
         """Create a list of Job objects by fetching data from PBS for multiple job IDs.
 
         Args:
-            job_ids (list[str]): The job identifiers to fetch from the scheduler.
-            ignore_failed (bool): If True, don't crash out when jobs cannot be parsed
+            job_ids: The job identifiers to fetch from the scheduler.
+            ignore_failed: If True, don't crash out when jobs cannot be parsed
                 but don't add to the job list.
 
         Returns:
-            list[Job]: A list containing instances of the Job class corresponding to
+            A list containing instances of the Job class corresponding to
                 each of the ids.
 
         Raises:
@@ -433,11 +433,11 @@ class FileJobFactory(JobFactory):
         """Create Job instances from YAML files.
 
         Args:
-            job_ids (list[str]): Interpreted as file paths to YAML files.
-            ignore_failed (bool): Ignored in this implementation.
+            job_ids: Interpreted as file paths to YAML files.
+            ignore_failed: Ignored in this implementation.
 
         Returns:
-            list[Job]: A list of Job instances created from the files.
+            A list of Job instances created from the files.
         """
         jobs = []
         for job_id in job_ids:

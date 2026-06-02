@@ -28,7 +28,7 @@ class Exporter(Protocol):
         """Export the results to a CSV file, one row per job.
 
         Args:
-            run_result (list[RunResult]): The results to export.
+            run_result: The results to export.
         """
 
 
@@ -49,7 +49,7 @@ class CSVExporter(Exporter):
         """Export the results.
 
         Args:
-            run_result (list[RunResult]): The results to export.
+            run_result: The results to export.
         """
         fieldnames = [
             "job_id",
