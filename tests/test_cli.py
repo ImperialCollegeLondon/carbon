@@ -1,5 +1,6 @@
 """Unit tests for the command-line interface."""
 
+import re
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -42,7 +43,7 @@ def make_result(job_id: str) -> RunResult:
     )
     return RunResult(
         node=node,
-        emissions=1.0,
+        emissions=10.0,
         job=job,
         energy_breakdown=EnergyBreakdown(cpu=0, gpu=0, memory=0, total=1.0),
         carbon_intensity=137.0,
@@ -93,7 +94,7 @@ def test_cli_aggregate_prints_aggregate(run_mock) -> None:
     assert "Estimated energy consumed" in out
 
 
-def test_exporter_config(tmp_path, mocker) -> None:
+def test_exporter_config(tmp_path, run_mock, mocker) -> None:
     """Test that the CLI passes exporter options from config file."""
     mod_cfg_path = tmp_path / "test_config.yaml"
     output_path = tmp_path / "test_output.csv"
@@ -111,7 +112,7 @@ def test_exporter_config(tmp_path, mocker) -> None:
         "carbon.__main__.get_exporter_classes", return_value=dict(csv=exporter_mock)
     )
     results = [make_result("jobA")]
-    mocker.patch("carbon.__main__.run", return_value=results)
+    run_mock.return_value = results
     runner = CliRunner()
     res = runner.invoke(
         main,
@@ -125,3 +126,31 @@ def test_exporter_config(tmp_path, mocker) -> None:
     assert res.exit_code == 0
     exporter_mock.from_config.assert_called_once_with({"output_path": str(output_path)})
     exporter_mock.from_config().export.assert_called_once_with(results)
+
+
+def test_comparisons(run_mock) -> None:
+    """Test that the CLI prints comparisons when --compare is given."""
+    run_mock.return_value = [make_result("jobA")]
+    runner = CliRunner()
+    res = runner.invoke(
+        main,
+        [
+            "--config-path",
+            str(CFG_PATH),
+            "--compare",
+            "jobA",
+        ],
+    )
+    assert res.exit_code == 0
+    out = res.output
+
+    assert re.search(r"-* Travel Comparisons -*", out)
+    assert re.search(r"Driving [0-9]+\.?[0-9]+ km", out)
+    assert re.search(r"Flying [0-9]+\.?[0-9]+ km \(longhaul, per passenger\)", out)
+    assert re.search(r"Travelling by train [0-9]+\.?[0-9]+ km", out)
+    assert re.search(r"-* Food Comparisons -*", out)
+    assert re.search(r"[0-9]+\.?[0-9]+ servings of beef", out)
+    assert re.search(r"[0-9]+\.?[0-9]+ servings of chicken", out)
+    assert re.search(r"[0-9]+\.?[0-9]+ servings of tofu", out)
+    assert re.search(r"[0-9]+\.?[0-9]+ bananas", out)
+    assert re.search(r"[0-9]+\.?[0-9]+ cups of coffee", out)
