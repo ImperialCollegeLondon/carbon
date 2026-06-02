@@ -210,7 +210,7 @@ def main(
         if exporter_class is None:
             print(f"Error: Unknown exporter {name}")
             sys.exit(1)
-        exporter_class.from_config({}).export(results)
+        exporter_class.from_config(config.exporter_config.get(name, {})).export(results)
 
     # Warn if any jobs failed to be analysed
     if failed_count > 0:
