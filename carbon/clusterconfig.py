@@ -43,6 +43,16 @@ class FileSchedulerConfig(BaseModel):
     node_data_file_path: Path
 
 
+class CSVExporterConfig(BaseModel):
+    """Configuration for exporting results to CSV files.
+
+    Attributes:
+        output_path (Path): Path where CSV output will be saved.
+    """
+
+    output_path: Path = Path("carbon_output.csv")
+
+
 class ClusterConfig(BaseModel):  # type: ignore[explicit-any]
     """Configuration for an HPC cluster and hosting data center.
 

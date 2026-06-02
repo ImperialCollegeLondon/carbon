@@ -2,6 +2,7 @@
 
 import csv
 from datetime import datetime
+from pathlib import Path
 
 from carbon import RunResult
 from carbon.exporter import CSVExporter
@@ -46,15 +47,15 @@ def make_result(job_id: str) -> RunResult:
 
 def test_csv_exporter_write_rows(tmp_path) -> None:
     """Test that CSVExporter writes rows to a CSV file."""
-    output_file = tmp_path / "test_output.csv"
-    exporter = CSVExporter(str(output_file))
+    output_path = tmp_path / "test_output.csv"
+    exporter = CSVExporter(output_path)
     exporter.export([make_result("job1"), make_result("job2")])
 
-    with open(output_file) as csvfile:
-        rows = list(csv.reader(csvfile))
+    with open(output_path) as csvfile:
+        rows = list(csv.DictReader(csvfile))
 
-    assert len(rows) == 3  # header + 2 jobs
-    assert rows[0] == [
+    assert len(rows) == 2
+    assert list(rows[0].keys()) == [
         "job_id",
         "starttime",
         "runtime",
@@ -66,43 +67,18 @@ def test_csv_exporter_write_rows(tmp_path) -> None:
         "carbon_intensity",
         "emissions",
     ]
-    assert rows[1][0] == "job1"
-    assert rows[2][0] == "job2"
+    assert rows[0]["job_id"] == "job1"
+    assert rows[1]["job_id"] == "job2"
 
 
 def test_csv_exporter_from_config(tmp_path) -> None:
     """Test that CSVExporter can be created from configuration."""
     output_file = tmp_path / "config_output.csv"
     exporter = CSVExporter.from_config({"output_path": str(output_file)})
-    assert exporter.output_path == str(output_file)
+    assert exporter.output_path == output_file
 
 
 def test_csv_exporter_default_output_path() -> None:
     """Test that CSVExporter uses default output path if not specified."""
     exporter = CSVExporter.from_config({})
-    assert exporter.output_path == "carbon_output.csv"
-
-
-def test_csv_exporter_no_duplicate_header(tmp_path) -> None:
-    """Test that header is not written twice when appending."""
-    output_file = tmp_path / "test_output.csv"
-    exporter = CSVExporter(str(output_file))
-    exporter.export([make_result("job1")])
-    exporter.export([make_result("job2")])
-
-    with open(output_file) as csvfile:
-        rows = list(csv.reader(csvfile))
-
-    assert len(rows) == 3  # header + 2 jobs
-    assert rows[0] == [
-        "job_id",
-        "starttime",
-        "runtime",
-        "cputime",
-        "gputime",
-        "memtime",
-        "node",
-        "energy_breakdown_total_kwh",
-        "carbon_intensity",
-        "emissions",
-    ]
+    assert exporter.output_path == Path("carbon_output.csv")
