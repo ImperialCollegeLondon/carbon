@@ -6,6 +6,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 from carbon.intensity import CarbonIntensity
 from carbon.job import Job, JobFactory
+from carbon.job.job import EnergyBreakdown
 from carbon.node import Node, NodeFactory
 
 with suppress(PackageNotFoundError):
@@ -18,7 +19,7 @@ class RunResult:
 
     node: Node
     emissions: float
-    energy_consumed: float
+    energy_breakdown: EnergyBreakdown
     job: Job
     carbon_intensity: float
 
@@ -83,13 +84,13 @@ def run(
             intensity = carbon_intensity.fetch()
 
         # Calculate emissions
-        emissions = intensity * energy_consumed
+        emissions = intensity * energy_consumed.total
 
         result_list.append(
             RunResult(
                 node=node,
                 emissions=emissions,
-                energy_consumed=energy_consumed,
+                energy_breakdown=energy_consumed,
                 job=job,
                 carbon_intensity=intensity,
             )

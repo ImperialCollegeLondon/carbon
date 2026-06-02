@@ -6,18 +6,21 @@ food consumption.
 """
 
 import pkgutil
+from importlib.metadata import entry_points
 from io import StringIO
 
 import click
 
 from carbon import RunResult, run
 from carbon.clusterconfig import ClusterConfig
+from carbon.exporter import CSVExporter, Exporter
 from carbon.job.factories import (
     DummyJobFactory,
     FileJobFactory,
     JobFactory,
     PBSJobFactory,
 )
+from carbon.job.job import EnergyBreakdown
 from carbon.node.factories import (
     DummyNodeFactory,
     FileNodeFactory,
@@ -28,15 +31,32 @@ from carbon.node.factories import (
 
 def get_node_factory_classes() -> dict[str, type[NodeFactory]]:
     """Get available node factory classes."""
-    # here is where you can do dynamic import gubbins to allow users to supply
-    # their own node factory classes
-    # for now, just return the built-in ones
-    return dict(dummy=DummyNodeFactory, pbs=PBSNodeFactory, file=FileNodeFactory)
+    factories: dict[str, type[NodeFactory]] = dict(
+        dummy=DummyNodeFactory, pbs=PBSNodeFactory, file=FileNodeFactory
+    )
+    for ep in entry_points(group="carbon.node_factory"):
+        if ep.name not in factories:
+            factories[ep.name] = ep.load()
+
+    return factories
 
 
 def get_job_factory_classes() -> dict[str, type[JobFactory]]:
     """Get available job factory classes."""
-    return dict(dummy=DummyJobFactory, pbs=PBSJobFactory, file=FileJobFactory)
+    factories: dict[str, type[JobFactory]] = dict(
+        dummy=DummyJobFactory, pbs=PBSJobFactory, file=FileJobFactory
+    )
+
+    for ep in entry_points(group="carbon.job_factory"):
+        if ep.name not in factories:
+            factories[ep.name] = ep.load()
+
+    return factories
+
+
+def get_exporter_classes() -> dict[str, type[Exporter]]:
+    """Get available exporter classes."""
+    return dict(csv=CSVExporter)
 
 
 @click.command()
@@ -55,7 +75,7 @@ def get_job_factory_classes() -> dict[str, type[JobFactory]]:
 @click.option(
     "--average-intensity",
     is_flag=True,
-    help="Use the UK average value for the carbon intensity (137 gCO2/kWh)",
+    help="Use average carbon intensity value if configured",
 )
 @click.option(
     "--split-jobs",
@@ -186,6 +206,13 @@ def main(
             )
             break
 
+    for name in config.exporters:
+        exporter_class = get_exporter_classes().get(name)
+        if exporter_class is None:
+            print(f"Error: Unknown exporter {name}")
+            sys.exit(1)
+        exporter_class.from_config(config.exporter_config.get(name, {})).export(results)
+
     # Warn if any jobs failed to be analysed
     if failed_count > 0:
         print(f"Warning: {failed_count} job(s) could not be analysed.")
@@ -224,7 +251,7 @@ def main(
             total_gputime += job.gputime
             total_memtime += job.memtime
 
-            total_energy_consumed += result.energy_consumed
+            total_energy_consumed += result.energy_breakdown.total
             total_emissions += result.emissions
             intensity_list.append(result.carbon_intensity)
 
@@ -245,7 +272,9 @@ def main(
         agg_result = RunResult(
             node=results[0].node,  # Just use first node for now
             emissions=total_emissions,
-            energy_consumed=total_energy_consumed,
+            energy_breakdown=EnergyBreakdown(
+                cpu=0, gpu=0, memory=0, total=total_energy_consumed
+            ),
             job=agg_job,
             carbon_intensity=sum(intensity_list) / len(intensity_list),
         )
@@ -276,7 +305,7 @@ def output_result(
     """
     node = result.node
     emissions = result.emissions
-    energy_consumed = result.energy_consumed
+    total_energy_consumed = result.energy_breakdown.total
     job = result.job
     intensity = result.carbon_intensity
 
@@ -313,7 +342,12 @@ def output_result(
         f"Estimated energy consumed from {job.cputime:.2f} CPU-hours "
         f"and {job.gputime:.2f} GPU-hours "
         f"and {job.memtime:.2f} GB-hours "
-        f"is {energy_consumed:.2f} kWh"
+        f"is {total_energy_consumed:.2f} kWh"
+    )
+    print(
+        f"  CPU: {result.energy_breakdown.cpu:.2f} kWh, "
+        f"GPU: {result.energy_breakdown.gpu:.2f} kWh, "
+        f"Memory: {result.energy_breakdown.memory:.2f} kWh"
     )
     if average_intensity:
         print(f"Using average carbon intensity of {config.average_intensity} gCO2/kWh")

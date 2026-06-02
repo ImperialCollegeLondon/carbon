@@ -2,12 +2,15 @@
 
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import MagicMock
 
+import yaml
 from click.testing import CliRunner
 
 from carbon import RunResult
 from carbon.__main__ import main
 from carbon.job import Job, JobState
+from carbon.job.job import EnergyBreakdown
 from carbon.node import Node
 
 
@@ -37,7 +40,11 @@ def make_result(job_id: str) -> RunResult:
         per_gb_power_watts=0.5,
     )
     return RunResult(
-        node=node, emissions=1.0, energy_consumed=1.0, job=job, carbon_intensity=137.0
+        node=node,
+        emissions=1.0,
+        job=job,
+        energy_breakdown=EnergyBreakdown(cpu=0, gpu=0, memory=0, total=1.0),
+        carbon_intensity=137.0,
     )
 
 
@@ -104,3 +111,38 @@ def test_cli_aggregate_prints_aggregate(monkeypatch) -> None:
     out = res.output
     assert "Aggregating estimates over multiple jobs." in out
     assert "Estimated energy consumed" in out
+
+
+def test_exporter_config(tmp_path, mocker) -> None:
+    """Test that the CLI passes exporter options from config file."""
+    cfg_in_path = Path(__file__).parents[1] / "clusters" / "dummy.yaml"
+    cfg_path = tmp_path / "test_config.yaml"
+    output_path = tmp_path / "test_output.csv"
+
+    # write new config file with exporter options
+    with open(cfg_in_path) as f:
+        config_data = yaml.safe_load(f)
+    config_data["exporters"] = ["csv"]
+    config_data["exporter_config"] = dict(csv=dict(output_path=str(output_path)))
+    with open(cfg_path, "w") as f:
+        yaml.safe_dump(config_data, f)
+
+    exporter_mock = MagicMock()
+    mocker.patch(
+        "carbon.__main__.get_exporter_classes", return_value=dict(csv=exporter_mock)
+    )
+    results = [make_result("jobA")]
+    mocker.patch("carbon.__main__.run", return_value=results)
+    runner = CliRunner()
+    res = runner.invoke(
+        main,
+        [
+            "--config-path",
+            cfg_path,
+            f"path={output_path}",
+            "jobA",
+        ],
+    )
+    assert res.exit_code == 0
+    exporter_mock.from_config.assert_called_once_with({"output_path": str(output_path)})
+    exporter_mock.from_config().export.assert_called_once_with(results)

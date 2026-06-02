@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pytest
 
+from carbon.__main__ import get_job_factory_classes
 from carbon.job import Job, JobState, UnknownJobIDError
 from carbon.job.factories import PBSJobFactory, hours
 from carbon.node import Node
@@ -147,10 +148,16 @@ def test_energy_calculate() -> None:
         per_gb_power_watts=2.0,
     )
 
-    expected = ((10.0 * 2.0) + (200.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
+    expected_cpu = (10.0 * 2.0) * 1.5 / 1000.0
+    expected_gpu = (200.0 * 2.0) * 1.5 / 1000.0
+    expected_memory = (32.0 * 2.0) * 1.5 / 1000.0
+    expected_total = expected_cpu + expected_gpu + expected_memory
     result = job.calculate_energy(node, 1.5)
 
-    assert np.isclose(result, expected, atol=1e-9)
+    assert np.isclose(result.cpu, expected_cpu, atol=1e-9)
+    assert np.isclose(result.gpu, expected_gpu, atol=1e-9)
+    assert np.isclose(result.memory, expected_memory, atol=1e-9)
+    assert np.isclose(result.total, expected_total, atol=1e-9)
 
 
 def test_energy_calculate_no_gpu() -> None:
@@ -174,10 +181,16 @@ def test_energy_calculate_no_gpu() -> None:
         per_gb_power_watts=2.0,
     )
 
-    expected = ((10.0 * 2.0) + (32.0 * 2.0)) * 1.5 / 1000.0
+    expected_cpu = (10.0 * 2.0) * 1.5 / 1000.0
+    expected_gpu = 0.0
+    expected_memory = (32.0 * 2.0) * 1.5 / 1000.0
+    expected_total = expected_cpu + expected_gpu + expected_memory
     result = job.calculate_energy(node, 1.5)
 
-    assert np.isclose(result, expected, atol=1e-9)
+    assert np.isclose(result.cpu, expected_cpu, atol=1e-9)
+    assert np.isclose(result.gpu, expected_gpu, atol=1e-9)
+    assert np.isclose(result.memory, expected_memory, atol=1e-9)
+    assert np.isclose(result.total, expected_total, atol=1e-9)
 
 
 def test_file_job_factory_create(tmp_path: Path) -> None:
@@ -213,3 +226,20 @@ def test_file_job_factory_create(tmp_path: Path) -> None:
         node=job_data.node,
         state=job_data.state,
     )
+
+
+def test_get_job_factory_classes_with_plugin() -> None:
+    """Test that get_job_factory_classes returns the expected classes."""
+    mock_factory = Mock()
+    mock_ep = Mock()
+    mock_ep.name = "slurm"
+    mock_ep.load.return_value = [mock_factory]
+
+    with patch("carbon.__main__.entry_points", return_value=[mock_ep]):
+        factories = get_job_factory_classes()
+
+    assert "file" in factories
+    assert "pbs" in factories
+    assert "dummy" in factories
+    assert "slurm" in factories
+    assert factories["slurm"] == [mock_factory]
