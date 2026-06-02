@@ -5,7 +5,14 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel, PositiveFloat
 
-ComparisonRow = tuple[str, float, str]
+
+@dataclass
+class ComparisonRow:
+    """Represents a single comparison row for emissions comparisons."""
+
+    item: str
+    amount: float
+    unit: str
 
 
 class EmissionsComparison(ABC):
@@ -22,33 +29,6 @@ class EmissionsComparison(ABC):
             list[ComparisonRow]: List of (item, amount, unit/note) tuples.
         """
         pass
-
-    @abstractmethod
-    def format_line(self, item: str, amount: float, unit: str) -> str:
-        """Format a single comparison line.
-
-        Args:
-            item (str): The name of the item.
-            amount (float): The amount of the item.
-            unit (str): The unit or note for the amount.
-
-        Returns:
-            str: Formatted comparison line.
-        """
-        pass
-
-    def output_text(self, emissions_gco2: float) -> str:
-        """Print the equivalent travel distances for the given emissions.
-
-        Args:
-            emissions_gco2 (float): The emissions in grams of CO2 to compare against.
-        """
-        output = "Equivalent to:\n"
-        output += "\n".join(
-            self.format_line(*equivalent)
-            for equivalent in self.get_equivalents(emissions_gco2)
-        )
-        return output
 
 
 class TravelComparisonData(BaseModel):
@@ -75,22 +55,9 @@ class Travel(EmissionsComparison):
             list[tuple[str, float, str]]: List of (method, kilometers, note) tuples.
         """
         return [
-            (comp.method, emissions_gco2 / comp.gCO2e_per_km, comp.note)
+            ComparisonRow(comp.method, emissions_gco2 / comp.gCO2e_per_km, comp.note)
             for comp in self.comparisons
         ]
-
-    def format_line(self, item: str, amount: float, unit: str) -> str:
-        """Format a single comparison line.
-
-        Args:
-            item (str): The name of the item.
-            amount (float): The amount of the item.
-            unit (str): The unit or note for the amount.
-
-        Returns:
-            str: Formatted comparison line.
-        """
-        return f"    {item} {amount:.1f} km {unit}"
 
 
 class FoodComparisonData(BaseModel):
@@ -118,26 +85,10 @@ class Food(EmissionsComparison):
             list[tuple[str, float, str]]: List of (food, portions, portion_name) tuples.
         """
         return [
-            (
+            ComparisonRow(
                 comp.food,
                 emissions_gco2 / comp.gCO2e_per_kilo * comp.portion_per_kilo,
                 comp.plural_portion_name,
             )
             for comp in self.comparisons
         ]
-
-    def format_line(self, item: str, amount: float, unit: str) -> str:
-        """Format a single comparison line.
-
-        Args:
-            item (str): The name of the item.
-            amount (float): The amount of the item.
-            unit (str): The unit or note for the amount.
-
-        Returns:
-            str: Formatted comparison line.
-        """
-        if unit:
-            return f"    {amount:.1f} {unit} of {item}"
-        else:
-            return f"    {amount:.1f} {item}"

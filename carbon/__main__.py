@@ -7,12 +7,20 @@ food consumption.
 
 import csv
 import pkgutil
+from collections.abc import Callable
 from importlib.metadata import entry_points
 
 import click
 
 from carbon import RunResult, run
 from carbon.clusterconfig import ClusterConfig
+from carbon.comparisons import (
+    ComparisonRow,
+    Food,
+    FoodComparisonData,
+    Travel,
+    TravelComparisonData,
+)
 from carbon.exporter import CSVExporter, Exporter
 from carbon.job.factories import (
     DummyJobFactory,
@@ -57,6 +65,31 @@ def get_job_factory_classes() -> dict[str, type[JobFactory]]:
 def get_exporter_classes() -> dict[str, type[Exporter]]:
     """Get available exporter classes."""
     return dict(csv=CSVExporter)
+
+
+def food_line_formatter(comparison: ComparisonRow) -> str:
+    """Format a line of the food comparisons output."""
+    if comparison.unit:
+        return f"{comparison.amount:.1f} {comparison.unit} of {comparison.item}"
+    else:
+        return f"{comparison.amount:.1f} {comparison.item}"
+
+
+def travel_line_formatter(comparison: ComparisonRow) -> str:
+    """Format a line of the travel comparisons output."""
+    return f"{comparison.item} {comparison.amount:.1f} km {comparison.unit}"
+
+
+def comparison_output_formatter(
+    comparisons: list[ComparisonRow],
+    formatter: Callable[[ComparisonRow], str],
+    comparison_type: str,
+) -> str:
+    """Format the comparisons output using the given line formatter."""
+    output = f"\n----- {comparison_type} Comparisons -----\n"
+    for comparison in comparisons:
+        output += formatter(comparison) + "\n"
+    return output
 
 
 @click.command()
@@ -358,13 +391,6 @@ def output_result(
 
     # Do comparisons if requested
     if compare:
-        from carbon.comparisons import (
-            Food,
-            FoodComparisonData,
-            Travel,
-            TravelComparisonData,
-        )
-
         # using pkgutil.get_data to access data files within the package
         # as this is more robust across different contexts (e.g. pyinstaller bundle)
         travel_data = pkgutil.get_data("carbon", "data/travel.csv")
@@ -377,14 +403,20 @@ def output_result(
                 "contains the travel.csv file."
             )
         else:
-            print("----- Travel Comparisons -----")
             travel_comparer = Travel(
                 [
                     TravelComparisonData.model_validate(row)
                     for row in csv.DictReader(travel_data.decode().split("\n"))
                 ]
             )
-            print(travel_comparer.output_text(emissions))
+            print(
+                comparison_output_formatter(
+                    travel_comparer.get_equivalents(emissions),
+                    travel_line_formatter,
+                    "Travel",
+                ),
+                end="",
+            )
 
         if not food_data:
             print(
@@ -393,14 +425,20 @@ def output_result(
                 "contains the food.csv file."
             )
         else:
-            print("----- Food Comparisons -----")
             food_comparer = Food(
                 [
                     FoodComparisonData.model_validate(row)
                     for row in csv.DictReader(food_data.decode().split("\n"))
                 ]
             )
-            print(food_comparer.output_text(emissions))
+            print(
+                comparison_output_formatter(
+                    food_comparer.get_equivalents(emissions),
+                    food_line_formatter,
+                    "Food",
+                ),
+                end="",
+            )
 
 
 if __name__ == "__main__":
