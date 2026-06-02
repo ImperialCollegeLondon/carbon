@@ -133,7 +133,7 @@ def test_short_job_skips_api(tmpdir: Path) -> None:
     with open(cfg_path) as f:
         config = yaml.safe_load(f)
 
-    config["scheduler_config"]["run_time"] = 0.1
+    config["scheduler_config"]["cpu_time"] = 0.1
 
     modified_cfg_path = tmpdir / "modified_dummy.yaml"
     with open(modified_cfg_path, "w") as f:
