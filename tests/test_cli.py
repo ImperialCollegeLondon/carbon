@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import pytest
 import yaml
 from click.testing import CliRunner
 
@@ -48,32 +49,27 @@ def make_result(job_id: str) -> RunResult:
     )
 
 
-def test_cli_split_jobs_prints_each(monkeypatch) -> None:
+@pytest.fixture
+def run_mock(mocker) -> MagicMock:
+    """Fixture to patch the run() function used by the CLI."""
+    return mocker.patch("carbon.__main__.run")
+
+
+CFG_PATH = Path(__file__).parents[1] / "clusters" / "dummy.yaml"
+
+
+def test_cli_split_jobs_prints_each(run_mock) -> None:
     """When --split_jobs is given, ensure the CLI prints a block per job.
 
     Monkeypatches the internal run() call to return deterministic results and
     asserts that each job's ID appears in the CLI output.
     """
-    cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
-
-    def fake_run(
-        job_ids,
-        node_factory,
-        job_factory,
-        pue,
-        region_id,
-        average_intensity,
-        ignore_failed,
-    ) -> list[RunResult]:
-        return [make_result("jobA"), make_result("jobB")]
-
-    # Patch the run function used by the CLI module
-    monkeypatch.setattr("carbon.__main__.run", fake_run)
+    run_mock.return_value = [make_result("jobA"), make_result("jobB")]
 
     runner = CliRunner()
     # Ensure options (config) come before positional args to avoid parsing issues
     res = runner.invoke(
-        main, ["--config-path", cfg_path, "--split-jobs", "jobA", "jobB"]
+        main, ["--config-path", str(CFG_PATH), "--split-jobs", "jobA", "jobB"]
     )
     assert res.exit_code == 0
     out = res.output
@@ -81,30 +77,16 @@ def test_cli_split_jobs_prints_each(monkeypatch) -> None:
     assert "Job ID: jobB" in out
 
 
-def test_cli_aggregate_prints_aggregate(monkeypatch) -> None:
+def test_cli_aggregate_prints_aggregate(run_mock) -> None:
     """When multiple jobs are requested without --split_jobs, print aggregate.
 
     Verifies the CLI prints aggregation messages and an estimated energy
     summary for multiple jobs.
     """
-    cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
     results = [make_result("jobA"), make_result("jobB")]
-
-    def fake_run(
-        job_ids,
-        node_factory,
-        job_factory,
-        pue,
-        region_id,
-        average_intensity,
-        ignore_failed,
-    ) -> list[RunResult]:
-        return results
-
-    monkeypatch.setattr("carbon.__main__.run", fake_run)
-
+    run_mock.return_value = results
     runner = CliRunner()
-    res = runner.invoke(main, ["--config-path", cfg_path, "jobA", "jobB"])
+    res = runner.invoke(main, ["--config-path", str(CFG_PATH), "jobA", "jobB"])
     assert res.exit_code == 0
     out = res.output
     assert "Aggregating estimates over multiple jobs." in out
@@ -113,16 +95,15 @@ def test_cli_aggregate_prints_aggregate(monkeypatch) -> None:
 
 def test_exporter_config(tmp_path, mocker) -> None:
     """Test that the CLI passes exporter options from config file."""
-    cfg_in_path = Path(__file__).parents[1] / "clusters" / "dummy.yaml"
-    cfg_path = tmp_path / "test_config.yaml"
+    mod_cfg_path = tmp_path / "test_config.yaml"
     output_path = tmp_path / "test_output.csv"
 
     # write new config file with exporter options
-    with open(cfg_in_path) as f:
+    with open(CFG_PATH) as f:
         config_data = yaml.safe_load(f)
     config_data["exporters"] = ["csv"]
     config_data["exporter_config"] = dict(csv=dict(output_path=str(output_path)))
-    with open(cfg_path, "w") as f:
+    with open(mod_cfg_path, "w") as f:
         yaml.safe_dump(config_data, f)
 
     exporter_mock = MagicMock()
@@ -136,7 +117,7 @@ def test_exporter_config(tmp_path, mocker) -> None:
         main,
         [
             "--config-path",
-            cfg_path,
+            mod_cfg_path,
             f"path={output_path}",
             "jobA",
         ],

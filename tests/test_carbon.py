@@ -16,13 +16,14 @@ def fetch_mock(mocker) -> MagicMock:
     return mocker.patch("carbon.intensity.CarbonIntensity.fetch", return_value=1.0)
 
 
+CFG_PATH = Path(__file__).parents[1] / "clusters" / "dummy.yaml"
+
+
 def test_single_job() -> None:
     """A single-job run with --average-intensity prints usable details."""
-    cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
-
     runner = CliRunner()
     res = runner.invoke(
-        main, ["--config-path", cfg_path, "--average-intensity", "1234"]
+        main, ["--config-path", str(CFG_PATH), "--average-intensity", "1234"]
     )
     assert res.exit_code == 0
     out = res.output
@@ -38,11 +39,9 @@ def test_single_job() -> None:
 
 def test_multiple_jobs_aggregate() -> None:
     """Multiple jobs without --split_jobs produce an aggregate block."""
-    cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
-
     runner = CliRunner()
     res = runner.invoke(
-        main, ["--config-path", cfg_path, "--average-intensity", "1234", "5678"]
+        main, ["--config-path", str(CFG_PATH), "--average-intensity", "1234", "5678"]
     )
     assert res.exit_code == 0
     out = res.output
@@ -56,15 +55,13 @@ def test_multiple_jobs_aggregate() -> None:
 
 def test_multiple_jobs_split_results() -> None:
     """Multiple jobs with --split_jobs print a block per job."""
-    cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
-
     runner = CliRunner()
     job_ids = ["1234", "5678"]
     res = runner.invoke(
         main,
         [
             "--config-path",
-            cfg_path,
+            str(CFG_PATH),
             "--average-intensity",
             "--split-jobs",
             *job_ids,
@@ -87,9 +84,7 @@ def test_multiple_jobs_split_results() -> None:
 
 def test_average_intensity_missing(tmpdir: Path) -> None:
     """Giving --average-intensity without it in config errors."""
-    cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
-
-    with open(cfg_path) as f:
+    with open(CFG_PATH) as f:
         config_data = yaml.safe_load(f)
 
     # Remove average_intensity if it exists
@@ -111,10 +106,8 @@ def test_average_intensity_missing(tmpdir: Path) -> None:
 
 def test_intensity_api(fetch_mock) -> None:
     """A single-job run without --average-intensity prints usable details."""
-    cfg_path = str(Path(__file__).parents[1] / "clusters" / "dummy.yaml")
-
     runner = CliRunner()
-    res = runner.invoke(main, ["--config-path", cfg_path, "1234"])
+    res = runner.invoke(main, ["--config-path", str(CFG_PATH), "1234"])
     assert res.exit_code == 0
     fetch_mock.assert_called_once()
 
