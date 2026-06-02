@@ -43,6 +43,16 @@ class FileSchedulerConfig(BaseModel):
     node_data_file_path: Path
 
 
+class CSVExporterConfig(BaseModel):
+    """Configuration for exporting results to CSV files.
+
+    Attributes:
+        output_path (Path): Path where CSV output will be saved.
+    """
+
+    output_path: Path = Path("carbon_output.csv")
+
+
 class ClusterConfig(BaseModel):  # type: ignore[explicit-any]
     """Configuration for an HPC cluster and hosting data center.
 
@@ -68,3 +78,5 @@ class ClusterConfig(BaseModel):  # type: ignore[explicit-any]
     scheduler: str
     scheduler_config: dict[str, Any]  # type: ignore[explicit-any]
     average_intensity: NonNegativeFloat | None = None
+    exporters: list[str] = []
+    exporter_config: dict[str, dict[str, Any]] = Field(default_factory=dict)  # type: ignore[explicit-any]
