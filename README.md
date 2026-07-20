@@ -26,7 +26,7 @@ To get started:
 1. Set up the virtual environment:
 
    ```bash
-   uv sync
+   uv sync --all-groups
    ```
 
 1. Install the git hooks:
