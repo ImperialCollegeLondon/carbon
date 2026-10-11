@@ -22,7 +22,7 @@ dev = [
     "pytest>=9.0.3,<10",
     "pytest-cov>=7.0.0,<8",
     "pytest-mock>=3.15.1,<4",
-    "pre-commit>=4.3.0,<5",
+    "pre-commit>=4.5.1,<5",
     "ruff>=0.14.0,<0.16",
     "pyinstaller<7.0.0,>=6.18.0",
 ]
